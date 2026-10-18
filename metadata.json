@@ -1,0 +1,6 @@
+{
+  "name": "Firm U lator",
+  "description": "Tactics-based football firm management simulation featuring away day travel logistics, fan loyalty, squad rosters, and tactical clash engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,891 @@
+import { Firm, Lad, Fixture, TerritoryLocation, TerraceNews, Tactics, AwayTravelPlan } from '../types/game';
+
+// The 26 authentic clubs from SFS v0.1 across Big Time League & Up and Comers
+export const INITIAL_FIRMS: Firm[] = [
+  // Big Time League (Tier 1)
+  {
+    id: 'firm_northwood',
+    name: 'Northwood Red Legion',
+    shortName: 'Northwood',
+    footballClub: 'Northwood United',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Northwood',
+    region: 'Northern',
+    clubBand: 'Elite',
+    primaryColor: '#ef5350',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Red Lion (High St)',
+    stadium: 'Northwood Park',
+    respect: 540,
+    memberCount: 160,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 88,
+    territoryPoints: 4,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 87,
+      baseBottle: 89,
+      aggression: 5,
+      firmStyle: 'Northern direct powerhouse, brutal frontline press, devastating wedge breakthroughs.'
+    }
+  },
+  {
+    id: 'firm_kingsbridge',
+    name: 'Kingsbridge Gold Vanguard',
+    shortName: 'Kingsbridge',
+    footballClub: 'Kingsbridge Ath.',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Kingsbridge',
+    region: 'Midlands',
+    clubBand: 'Elite',
+    primaryColor: '#ffd54f',
+    secondaryColor: '#1e293b',
+    pubStronghold: 'The Crown & Anchor',
+    stadium: 'Kingsbridge Ground',
+    respect: 510,
+    memberCount: 145,
+    loyaltyTier: 'Away Veterans',
+    loyaltyIndex: 82,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'pincer_flank',
+      baseHardness: 83,
+      baseBottle: 84,
+      aggression: 4,
+      firmStyle: 'Synchronized tactical grid, midland pincer traps, heavy away attendance.'
+    }
+  },
+  {
+    id: 'firm_westport',
+    name: 'Westport Dockside Firm',
+    shortName: 'Westport',
+    footballClub: 'Westport City',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Westport',
+    region: 'Coastal',
+    clubBand: 'Elite',
+    primaryColor: '#26c6da',
+    secondaryColor: '#0f172a',
+    pubStronghold: 'The Quayside Mariner',
+    stadium: 'Westport Docks',
+    respect: 525,
+    memberCount: 150,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 86,
+    territoryPoints: 4,
+    tacticsProfile: {
+      favoredFormation: 'flat_phalanx',
+      baseHardness: 86,
+      baseBottle: 85,
+      aggression: 5,
+      firmStyle: 'Rough coastal dockers, relentless physical endurance, fortified concourses.'
+    }
+  },
+  {
+    id: 'firm_riverside',
+    name: 'Riverside Blue Patrol',
+    shortName: 'Riverside',
+    footballClub: 'Riverside FC',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Riverside',
+    region: 'Southern',
+    clubBand: 'Elite',
+    primaryColor: '#42a5f5',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Bridge Tavern',
+    stadium: 'Riverside Stadium',
+    respect: 495,
+    memberCount: 135,
+    loyaltyTier: 'Away Veterans',
+    loyaltyIndex: 79,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'box_retain',
+      baseHardness: 81,
+      baseBottle: 83,
+      aggression: 4,
+      firmStyle: 'High tactical awareness, tight defensive perimeter, quick station ambushes.'
+    }
+  },
+  {
+    id: 'firm_eastgate',
+    name: 'Eastgate Rovers Crew',
+    shortName: 'Eastgate',
+    footballClub: 'Eastgate Rovers',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Eastgate',
+    region: 'Midlands',
+    clubBand: 'Mid',
+    primaryColor: '#66bb6a',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Locomotive Arms',
+    stadium: 'Eastgate Park',
+    respect: 470,
+    memberCount: 120,
+    loyaltyTier: 'Weekend Casuals',
+    loyaltyIndex: 75,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'flat_phalanx',
+      baseHardness: 80,
+      baseBottle: 78,
+      aggression: 3,
+      firmStyle: 'Balanced terrace discipline, steady defensive line, conservative clashes.'
+    }
+  },
+  {
+    id: 'firm_stonebridge',
+    name: 'Stonebridge Steamers',
+    shortName: 'Stonebridge',
+    footballClub: 'Stonebridge Park',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Stonebridge',
+    region: 'Midlands',
+    clubBand: 'Mid',
+    primaryColor: '#ff7043',
+    secondaryColor: '#18181b',
+    pubStronghold: 'The Iron Works',
+    stadium: 'Stonebridge Ground',
+    respect: 485,
+    memberCount: 130,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 83,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 85,
+      baseBottle: 84,
+      aggression: 4,
+      firmStyle: 'Direct heavy-impact brawlers, fast pub lock-ins, high street presence.'
+    }
+  },
+  {
+    id: 'firm_highbury_oly',
+    name: 'Olympic Highbury Herd',
+    shortName: 'Highbury',
+    footballClub: 'Highbury Olympic',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Highbury',
+    region: 'Midlands',
+    clubBand: 'Mid',
+    primaryColor: '#ec4899',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Olympic Vaults',
+    stadium: 'Highbury Arena',
+    respect: 460,
+    memberCount: 115,
+    loyaltyTier: 'Weekend Casuals',
+    loyaltyIndex: 73,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'alley_ambush',
+      baseHardness: 77,
+      baseBottle: 76,
+      aggression: 4,
+      firmStyle: 'Fast runners, deceptive chokepoint ambushes, quick dispersal.'
+    }
+  },
+  {
+    id: 'firm_southbank',
+    name: 'Southbank Town Cutters',
+    shortName: 'Southbank',
+    footballClub: 'Southbank Town',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Southbank',
+    region: 'Southern',
+    clubBand: 'Mid',
+    primaryColor: '#14b8a6',
+    secondaryColor: '#000000',
+    pubStronghold: 'The Thames Waterman',
+    stadium: 'Southbank Wharf',
+    respect: 475,
+    memberCount: 125,
+    loyaltyTier: 'Away Veterans',
+    loyaltyIndex: 77,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'box_retain',
+      baseHardness: 82,
+      baseBottle: 80,
+      aggression: 3,
+      firmStyle: 'Calculated counter-punchers, patient standoffs, high street smarts.'
+    }
+  },
+  {
+    id: 'firm_crown_heights',
+    name: 'Crown Heights Mob',
+    shortName: 'Crown Hts',
+    footballClub: 'Crown Heights',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Crown Heights',
+    region: 'Southern',
+    clubBand: 'Mid',
+    primaryColor: '#f97316',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Sovereign Tap',
+    stadium: 'Crown Park',
+    respect: 465,
+    memberCount: 120,
+    loyaltyTier: 'Weekend Casuals',
+    loyaltyIndex: 74,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 79,
+      baseBottle: 77,
+      aggression: 4,
+      firmStyle: 'Attacking enthusiasm, young casual core, flashy retro sportswear.'
+    }
+  },
+  {
+    id: 'firm_ashford',
+    name: 'Ashford Northern Anvils',
+    shortName: 'Ashford',
+    footballClub: 'Ashford Town',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Ashford',
+    region: 'Northern',
+    clubBand: 'Underdog',
+    primaryColor: '#ab47bc',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Blacksmiths Arms',
+    stadium: 'Ashford Meadow',
+    respect: 440,
+    memberCount: 95,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 85,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'box_retain',
+      baseHardness: 84,
+      baseBottle: 86,
+      aggression: 4,
+      firmStyle: 'Stubborn underdog grit, led by legendary bruisers Drake and Wells.'
+    }
+  },
+  {
+    id: 'firm_harbourview',
+    name: 'Harbourview Pier Cutters',
+    shortName: 'Harbourview',
+    footballClub: 'Harbourview FC',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Harbourview',
+    region: 'Coastal',
+    clubBand: 'Underdog',
+    primaryColor: '#94a3b8',
+    secondaryColor: '#1e293b',
+    pubStronghold: 'The Old Pier Hotel',
+    stadium: 'Harbourview Road',
+    respect: 430,
+    memberCount: 90,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 82,
+    territoryPoints: 1,
+    tacticsProfile: {
+      favoredFormation: 'flat_phalanx',
+      baseHardness: 82,
+      baseBottle: 83,
+      aggression: 3,
+      firmStyle: 'Coastal wind defenders, defensive wall specialists, tough away visits.'
+    }
+  },
+  {
+    id: 'firm_redcliffe',
+    name: 'Redcliffe Albion Miners',
+    shortName: 'Redcliffe',
+    footballClub: 'Redcliffe Albion',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Redcliffe',
+    region: 'Northern',
+    clubBand: 'Underdog',
+    primaryColor: '#e11d48',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Colliery Tavern',
+    stadium: 'Albion Ground',
+    respect: 450,
+    memberCount: 105,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 87,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 86,
+      baseBottle: 88,
+      aggression: 5,
+      firmStyle: 'Proud mining town culture, fierce frontline collision, relentless bottle.'
+    }
+  },
+  {
+    id: 'firm_greystone',
+    name: 'Greystone Quarry Crew',
+    shortName: 'Greystone',
+    footballClub: 'Greystone Athletic',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Greystone',
+    region: 'Northern',
+    clubBand: 'Underdog',
+    primaryColor: '#64748b',
+    secondaryColor: '#0f172a',
+    pubStronghold: 'The Granite Quarry Inn',
+    stadium: 'Greystone Field',
+    respect: 455,
+    memberCount: 110,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 86,
+    territoryPoints: 2,
+    tacticsProfile: {
+      favoredFormation: 'pincer_flank',
+      baseHardness: 85,
+      baseBottle: 85,
+      aggression: 4,
+      firmStyle: 'Unforgiving northern terrain specialists, hard tackles, station perimeter control.'
+    }
+  },
+  {
+    id: 'firm_blackwood',
+    name: 'Blackwood Foresters',
+    shortName: 'Blackwood',
+    footballClub: 'Blackwood Forest',
+    leagueTier: 'Big Time League (Tier 1)',
+    city: 'Blackwood',
+    region: 'Northern',
+    clubBand: 'Underdog',
+    primaryColor: '#059669',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Royal Oak (Blackwood)',
+    stadium: 'Foresters Way',
+    respect: 435,
+    memberCount: 95,
+    loyaltyTier: 'Away Veterans',
+    loyaltyIndex: 80,
+    territoryPoints: 1,
+    tacticsProfile: {
+      favoredFormation: 'alley_ambush',
+      baseHardness: 80,
+      baseBottle: 81,
+      aggression: 4,
+      firmStyle: 'Narrow alley chokepoints, hit-and-run tactics, quick forest trail escapes.'
+    }
+  },
+
+  // Up and Comers (Tier 2) - Including the iconic Millwall Cross
+  {
+    id: 'firm_millwall_cross',
+    name: 'Millwall Cross Bushwackers',
+    shortName: 'Millwall Cr',
+    footballClub: 'Millwall Cross',
+    leagueTier: 'Up and Comers (Tier 2)',
+    city: 'Millwall Cross',
+    region: 'Southern',
+    clubBand: 'Elite',
+    primaryColor: '#fbbf24',
+    secondaryColor: '#1e3a8a',
+    pubStronghold: 'The Den Bushwacker (Cold Blow Ln)',
+    stadium: 'The Cross Ground',
+    respect: 535,
+    memberCount: 165,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 94,
+    territoryPoints: 4,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 90,
+      baseBottle: 92,
+      aggression: 5,
+      firmStyle: 'Legendary southern terror: ferocious frontline, deafening anthems, never retreat.'
+    }
+  },
+  {
+    id: 'firm_oakwood',
+    name: 'Oakwood Iron Casuals',
+    shortName: 'Oakwood',
+    footballClub: 'Oakwood Athletic',
+    leagueTier: 'Up and Comers (Tier 2)',
+    city: 'Oakwood',
+    region: 'Midlands',
+    clubBand: 'Elite',
+    primaryColor: '#34d399',
+    secondaryColor: '#1e293b',
+    pubStronghold: 'The Old Oak Inn',
+    stadium: 'Oakwood Stadium',
+    respect: 490,
+    memberCount: 130,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 84,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'flat_phalanx',
+      baseHardness: 83,
+      baseBottle: 82,
+      aggression: 4,
+      firmStyle: 'Disciplined midlands wall, balanced strikes, high territorial defense.'
+    }
+  },
+  {
+    id: 'firm_portside',
+    name: 'Portside Marine Mob',
+    shortName: 'Portside',
+    footballClub: 'Portside Rangers',
+    leagueTier: 'Up and Comers (Tier 2)',
+    city: 'Portside',
+    region: 'Southern',
+    clubBand: 'Elite',
+    primaryColor: '#38bdf8',
+    secondaryColor: '#ffffff',
+    pubStronghold: 'The Navigators Tap',
+    stadium: 'Portside Arena',
+    respect: 500,
+    memberCount: 140,
+    loyaltyTier: 'Away Veterans',
+    loyaltyIndex: 81,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'pincer_flank',
+      baseHardness: 82,
+      baseBottle: 80,
+      aggression: 4,
+      firmStyle: 'Fast southern runners, high mobility down railway platforms, flare displays.'
+    }
+  },
+  {
+    id: 'firm_ironforge',
+    name: 'Ironforge Steamers',
+    shortName: 'Ironforge',
+    footballClub: 'Ironforge City',
+    leagueTier: 'Up and Comers (Tier 2)',
+    city: 'Ironforge',
+    region: 'Coastal',
+    clubBand: 'Elite',
+    primaryColor: '#f87171',
+    secondaryColor: '#18181b',
+    pubStronghold: 'The Blast Furnace',
+    stadium: 'The Foundry Ground',
+    respect: 505,
+    memberCount: 135,
+    loyaltyTier: 'Diehards',
+    loyaltyIndex: 85,
+    territoryPoints: 3,
+    tacticsProfile: {
+      favoredFormation: 'the_wedge',
+      baseHardness: 86,
+      baseBottle: 84,
+      aggression: 5,
+      firmStyle: 'Heavy industrial strikes, terrifying front row, high noise presence.'
+    }
+  }
+];
+
+// Lads roster using SFS firm subculture roles: Top Boy, Face, Minder, Runner, Nutter
+export const INITIAL_LADS: Lad[] = [
+  {
+    id: 'lad_1',
+    name: 'Terry Higgins',
+    nickname: 'The Sledge',
+    role: 'top_boy',
+    hardness: 89,
+    bottle: 94,
+    pace: 68,
+    streetSmarts: 90,
+    loyalty: 98,
+    stamina: 85,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 40,
+    status: 'active',
+    trait: {
+      name: 'Top Boy Authority',
+      description: 'Commands the pavement; nearby lads gain +12 Bottle during tense standoffs.',
+      statBonus: { bottle: 12, streetSmarts: 8 }
+    },
+    matchesFought: 36,
+    victories: 30,
+    avatarSeed: 'terry'
+  },
+  {
+    id: 'lad_2',
+    name: 'Gareth Jenkins',
+    nickname: 'Knuckles Gaz',
+    role: 'minder',
+    hardness: 92,
+    bottle: 86,
+    pace: 60,
+    streetSmarts: 68,
+    loyalty: 90,
+    stamina: 82,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 58,
+    status: 'active',
+    trait: {
+      name: 'Iron Shield',
+      description: 'Absorbs heavy initial strikes and shields the Top Boy from being isolated.',
+      statBonus: { hardness: 10 }
+    },
+    matchesFought: 32,
+    victories: 26,
+    avatarSeed: 'gaz'
+  },
+  {
+    id: 'lad_3',
+    name: 'Ronnie Davies',
+    nickname: 'The Face',
+    role: 'face',
+    hardness: 74,
+    bottle: 88,
+    pace: 75,
+    streetSmarts: 94,
+    loyalty: 92,
+    stamina: 80,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 25,
+    status: 'active',
+    trait: {
+      name: 'Silver Tongue',
+      description: 'Handles the phone calls and lowers police interrogation heat by 30%.',
+      statBonus: { streetSmarts: 12 }
+    },
+    matchesFought: 24,
+    victories: 20,
+    avatarSeed: 'ronnie'
+  },
+  {
+    id: 'lad_4',
+    name: 'Maccie O’Connor',
+    nickname: 'The Bullet',
+    role: 'runner',
+    hardness: 68,
+    bottle: 78,
+    pace: 93,
+    streetSmarts: 84,
+    loyalty: 82,
+    stamina: 90,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 32,
+    status: 'active',
+    trait: {
+      name: 'Alley Sprinter',
+      description: 'Guarantees swift flanking maneuvers and escapes police kettles.',
+      statBonus: { pace: 12 }
+    },
+    matchesFought: 22,
+    victories: 18,
+    avatarSeed: 'maccie'
+  },
+  {
+    id: 'lad_5',
+    name: 'Billy Barnes',
+    nickname: 'Mad Dog',
+    role: 'nutter',
+    hardness: 94,
+    bottle: 96,
+    pace: 76,
+    streetSmarts: 55,
+    loyalty: 88,
+    stamina: 86,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 75,
+    status: 'active',
+    trait: {
+      name: 'Terrace Berserker',
+      description: 'Explosive charge power that breaks enemy frontline formations on contact.',
+      statBonus: { hardness: 12, bottle: 10 }
+    },
+    matchesFought: 28,
+    victories: 23,
+    avatarSeed: 'billy'
+  },
+  {
+    id: 'lad_6',
+    name: 'Big Dave Miller',
+    nickname: 'The Tank',
+    role: 'minder',
+    hardness: 93,
+    bottle: 82,
+    pace: 52,
+    streetSmarts: 60,
+    loyalty: 86,
+    stamina: 75,
+    health: 95,
+    maxHealth: 100,
+    legalHeat: 65,
+    status: 'active',
+    trait: {
+      name: 'Pavement Anchor',
+      description: 'Immovable on wet cobblestones; cannot be knocked down by rival charges.',
+      statBonus: { hardness: 10 }
+    },
+    matchesFought: 34,
+    victories: 27,
+    avatarSeed: 'dave'
+  },
+  {
+    id: 'lad_7',
+    name: 'Jez Butterworth',
+    nickname: 'The Professor',
+    role: 'face',
+    hardness: 75,
+    bottle: 92,
+    pace: 65,
+    streetSmarts: 92,
+    loyalty: 95,
+    stamina: 78,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 22,
+    status: 'active',
+    trait: {
+      name: 'Tactical Recon',
+      description: 'Scouts rival pub locations and identifies vulnerable away convoys.',
+      statBonus: { streetSmarts: 10 }
+    },
+    matchesFought: 44,
+    victories: 38,
+    avatarSeed: 'jez'
+  },
+  {
+    id: 'lad_8',
+    name: 'Smudge Smith',
+    nickname: 'Whistler',
+    role: 'runner',
+    hardness: 70,
+    bottle: 77,
+    pace: 89,
+    streetSmarts: 86,
+    loyalty: 80,
+    stamina: 88,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 34,
+    status: 'active',
+    trait: {
+      name: 'Siren Spotter',
+      description: 'Warns the firm 45 seconds before Met Police riot vans reach the street.',
+      statBonus: { streetSmarts: 8, pace: 8 }
+    },
+    matchesFought: 20,
+    victories: 16,
+    avatarSeed: 'smudge'
+  },
+  {
+    id: 'lad_9',
+    name: 'Stevo Wright',
+    nickname: 'Stone Island',
+    role: 'nutter',
+    hardness: 85,
+    bottle: 90,
+    pace: 78,
+    streetSmarts: 66,
+    loyalty: 84,
+    stamina: 84,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 50,
+    status: 'active',
+    trait: {
+      name: 'Deafening Anthem',
+      description: 'Intimidates rival firm during standoff phase, reducing rival bottle by 10%.',
+      statBonus: { bottle: 8 }
+    },
+    matchesFought: 16,
+    victories: 12,
+    avatarSeed: 'stevo'
+  },
+  {
+    id: 'lad_10',
+    name: 'Chalky White',
+    nickname: 'Ghost',
+    role: 'runner',
+    hardness: 66,
+    bottle: 80,
+    pace: 87,
+    streetSmarts: 95,
+    loyalty: 86,
+    stamina: 82,
+    health: 100,
+    maxHealth: 100,
+    legalHeat: 15,
+    status: 'active',
+    trait: {
+      name: 'Plain Clothes Infiltrator',
+      description: 'Walks directly into enemy pub territory unnoticed to report numbers.',
+      statBonus: { streetSmarts: 12 }
+    },
+    matchesFought: 25,
+    victories: 21,
+    avatarSeed: 'chalky'
+  }
+];
+
+// Fixtures matching the SFS v0.1 club universe
+export const INITIAL_FIXTURES: Fixture[] = [
+  {
+    id: 'fix_1',
+    round: 1,
+    homeFirmId: 'firm_northwood',
+    awayFirmId: 'firm_kingsbridge',
+    venueName: 'Northwood High St & Station Approach',
+    location: 'Northwood (Northern)',
+    footballFixture: 'Northwood United vs Kingsbridge Ath.',
+    clashPlayed: false,
+    isDerby: false
+  },
+  {
+    id: 'fix_2',
+    round: 2,
+    homeFirmId: 'firm_westport',
+    awayFirmId: 'firm_northwood',
+    venueName: 'Quayside Pier & Dock Concourse',
+    location: 'Westport (Coastal)',
+    footballFixture: 'Westport City vs Northwood United',
+    clashPlayed: false,
+    isDerby: false
+  },
+  {
+    id: 'fix_3',
+    round: 3,
+    homeFirmId: 'firm_northwood',
+    awayFirmId: 'firm_redcliffe',
+    venueName: 'Colliery Lane & Station Viaduct',
+    location: 'Northwood (Northern)',
+    footballFixture: 'Northwood United vs Redcliffe Albion',
+    clashPlayed: false,
+    isDerby: true
+  },
+  {
+    id: 'fix_4',
+    round: 4,
+    homeFirmId: 'firm_riverside',
+    awayFirmId: 'firm_northwood',
+    venueName: 'Waterfront Esplanade & Bridge Approach',
+    location: 'Riverside (Southern)',
+    footballFixture: 'Riverside FC vs Northwood United',
+    clashPlayed: false,
+    isDerby: false
+  },
+  {
+    id: 'fix_5',
+    round: 5,
+    homeFirmId: 'firm_northwood',
+    awayFirmId: 'firm_stonebridge',
+    venueName: 'Iron Works Way & Pavement Chokepoint',
+    location: 'Northwood (Northern)',
+    footballFixture: 'Northwood United vs Stonebridge Park',
+    clashPlayed: false,
+    isDerby: false
+  },
+  {
+    id: 'fix_6',
+    round: 6,
+    homeFirmId: 'firm_millwall_cross',
+    awayFirmId: 'firm_northwood',
+    venueName: 'Cold Blow Lane & Station Vaults',
+    location: 'Millwall Cross (Southern)',
+    footballFixture: 'Millwall Cross vs Northwood United',
+    clashPlayed: false,
+    isDerby: true
+  }
+];
+
+export const INITIAL_TERRITORIES: TerritoryLocation[] = [
+  {
+    id: 'terr_1',
+    name: 'The Red Lion Pub (Headquarters)',
+    description: 'The sacred heart of the firm. Fortified backroom where travel convoys are planned.',
+    controlledBy: 'firm_northwood',
+    defenseLevel: 4,
+    weeklyRevenue: 450,
+    strategicBonus: '+15% Bottle when defending on home territory'
+  },
+  {
+    id: 'terr_2',
+    name: 'Northwood Central Station Concourse',
+    description: 'Key railway junction where visiting away supporters disembark under police gaze.',
+    controlledBy: 'firm_northwood',
+    defenseLevel: 3,
+    weeklyRevenue: 320,
+    strategicBonus: 'Enables quick station ambushes before police kettles lock down'
+  },
+  {
+    id: 'terr_3',
+    name: 'Northwood Park Turnstiles',
+    description: 'Narrow Victorian street leading to ground, surrounded by high brick walls.',
+    controlledBy: 'firm_northwood',
+    defenseLevel: 4,
+    weeklyRevenue: 380,
+    strategicBonus: 'Chokepoint advantage for The Wedge formation'
+  },
+  {
+    id: 'terr_4',
+    name: 'Canal Towpath Escape Route',
+    description: 'Secluded walkway avoiding police CCTV cameras and roadblocks.',
+    controlledBy: 'neutral',
+    defenseLevel: 2,
+    weeklyRevenue: 160,
+    strategicBonus: '-25% Police Heat gained after matchday clashes'
+  },
+  {
+    id: 'terr_5',
+    name: 'Midland Railway Junction Platform',
+    description: 'Transit hub where away firms transfer coaches across regional lines.',
+    controlledBy: 'neutral',
+    defenseLevel: 3,
+    weeklyRevenue: 480,
+    strategicBonus: '+50 Street Respect when captured from rival firms'
+  }
+];
+
+export const INITIAL_NEWS: TerraceNews[] = [
+  {
+    id: 'news_1',
+    headline: 'SFS CASUALS DIVISION FIXTURES CONFIRMED ACROSS BOTH TIERS',
+    snippet: 'Police intelligence warns of high tension between Northern and Southern heavyweights as away travel season commences.',
+    source: 'The Sunday Sport Gazette',
+    timeAgo: '1 hour ago',
+    severity: 'high'
+  },
+  {
+    id: 'news_2',
+    headline: 'KINGSBRIDGE GOLD VANGUARD CHARTER THREE MOTORWAY COACHES',
+    snippet: 'Midlands casuals spotted gathering at motorway service stations ahead of weekend clash.',
+    source: 'Terrace Casuals Weekly',
+    timeAgo: 'Yesterday',
+    severity: 'medium'
+  },
+  {
+    id: 'news_3',
+    headline: 'MET POLICE DEPLOY TACTICAL RIOT VANS TO RAILWAY TERMINALS',
+    snippet: 'Section 60 stop-and-search zones active around station concourses to prevent pre-match clashes.',
+    source: 'The Daily Evening Standard',
+    timeAgo: '2 days ago',
+    severity: 'low'
+  }
+];
+
+export const DEFAULT_TACTICS: Tactics = {
+  formation: 'the_wedge',
+  aggression: 4,
+  lineDepth: 'mid_pavement',
+  weaponDoctrine: 'strictly_fists',
+  retreatThreshold: 35,
+  priorityTarget: 'break_frontline',
+  selectedLadIds: ['lad_1', 'lad_2', 'lad_3', 'lad_4', 'lad_5', 'lad_6', 'lad_7', 'lad_8']
+};
+
+export const DEFAULT_AWAY_PLAN: AwayTravelPlan = {
+  transportMode: 'train_special',
+  pubStrategy: 'neutral_spoons',
+  arrivalTiming: 'midday_march',
+  contrabandSupplies: {
+    flares: 3,
+    firstAid: 2,
+    scoutsAhead: true,
+    solicitorOnCall: true
+  },
+  totalCost: 320,
+  stealthBonus: 50,
+  loyaltyImpact: 12,
+  policeHeatRisk: 25
+};

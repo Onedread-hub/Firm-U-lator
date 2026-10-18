@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0b1118;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+/* Football Manager 2010 Retro Theme Utilities */
+.fm-panel {
+  background: linear-gradient(180deg, #182535 0%, #101a26 100%);
+  border: 1px solid #283e56;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.fm-panel-header {
+  background: linear-gradient(180deg, #2a3d54 0%, #1a2736 100%);
+  border-bottom: 1px solid #36506e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.fm-sub-bar {
+  background: linear-gradient(180deg, #131d2a 0%, #0c131c 100%);
+  border-bottom: 1px solid #203144;
+}
+
+.fm-table-th {
+  background: linear-gradient(180deg, #243548 0%, #172330 100%);
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #334b66;
+}
+
+.fm-table-row:nth-child(even) {
+  background-color: rgba(26, 39, 54, 0.45);
+}
+
+.fm-table-row:nth-child(odd) {
+  background-color: rgba(16, 26, 38, 0.65);
+}
+
+.fm-table-row:hover {
+  background-color: rgba(45, 68, 94, 0.6);
+}
+
+.fm-stat-elite {
+  color: #facc15;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.25);
+}
+
+.fm-stat-good {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.fm-stat-avg {
+  color: #94a3b8;
+}
+
+.fm-stat-low {
+  color: #64748b;
+}
+
+.fm-continue-btn {
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+  border: 1px solid #4ade80;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.fm-continue-btn:hover {
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 3px 6px rgba(0, 0, 0, 0.6);
+}
