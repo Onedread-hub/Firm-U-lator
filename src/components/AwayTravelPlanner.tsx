@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AwayTravelPlan, TransportMode, PubStrategy, ArrivalTiming, Fixture, Firm } from '../types/game';
+import { CargoManifest } from '../types/trading';
+import { createDefaultCargoManifest } from '../data/tradingData';
 import { sound } from '../services/sound';
-import { Train, Bus, Car, Beer, Clock, Eye, AlertOctagon, Sparkles, DollarSign, ShieldCheck } from 'lucide-react';
+import { Train, Bus, Car, Beer, Clock, Eye, AlertOctagon, Sparkles, DollarSign, ShieldCheck, Package, Store } from 'lucide-react';
+import { AwayCargoPlanner } from './AwayCargoPlanner';
+import { AwayMarketModal } from './AwayMarketModal';
 
 interface AwayTravelPlannerProps {
   plan: AwayTravelPlan;
@@ -10,6 +14,8 @@ interface AwayTravelPlannerProps {
   treasury: number;
   playerFirmId?: string;
   onUpdatePlan: (plan: AwayTravelPlan) => void;
+  onDeductTreasury?: (amount: number, reason: string) => boolean;
+  onAddTreasury?: (amount: number) => void;
 }
 
 export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
@@ -18,9 +24,15 @@ export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
   rivalFirm,
   treasury,
   playerFirmId,
-  onUpdatePlan
+  onUpdatePlan,
+  onDeductTreasury,
+  onAddTreasury
 }) => {
   const isAway = nextFixture?.awayFirmId === playerFirmId;
+  const [subTab, setSubTab] = useState<'logistics' | 'cargo'>('logistics');
+  const [isMarketOpen, setIsMarketOpen] = useState<boolean>(false);
+
+  const manifest: CargoManifest = plan.cargoManifest || createDefaultCargoManifest();
 
   const handleSetTransport = (mode: TransportMode) => {
     sound.playClick();
@@ -105,6 +117,66 @@ export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
     });
   };
 
+  const handleUpdateManifest = (updatedManifest: CargoManifest) => {
+    onUpdatePlan({
+      ...plan,
+      cargoManifest: updatedManifest,
+      awayCityHeat: updatedManifest.awayCityHeat
+    });
+  };
+
+  const handleSellItem = (itemId: string, quantity: number) => {
+    const item = manifest.items.find(i => i.id === itemId);
+    if (!item || item.quantity <= 0) return;
+
+    const actualCount = Math.min(quantity, item.quantity);
+    const revenue = item.sellPrice * actualCount;
+    const addedHeat = item.heat * actualCount;
+
+    onAddTreasury?.(revenue);
+
+    const updatedItems = manifest.items.map(it => {
+      if (it.id === itemId) {
+        return { ...it, quantity: it.quantity - actualCount };
+      }
+      return it;
+    });
+
+    const nextHeat = Math.min(100, manifest.awayCityHeat + addedHeat);
+
+    handleUpdateManifest({
+      ...manifest,
+      items: updatedItems,
+      totalUnits: Math.max(0, manifest.totalUnits - actualCount),
+      awayCityHeat: nextHeat
+    });
+  };
+
+  const handleLiquidateAll = () => {
+    let totalRevenue = 0;
+    let totalHeat = 0;
+    let totalSold = 0;
+
+    const updatedItems = manifest.items.map(it => {
+      if (it.quantity > 0) {
+        totalRevenue += it.sellPrice * it.quantity;
+        totalHeat += it.heat * it.quantity;
+        totalSold += it.quantity;
+        return { ...it, quantity: 0 };
+      }
+      return it;
+    });
+
+    onAddTreasury?.(totalRevenue);
+
+    handleUpdateManifest({
+      ...manifest,
+      items: updatedItems,
+      totalUnits: 0,
+      awayCityHeat: Math.min(100, manifest.awayCityHeat + totalHeat)
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* FM 2010 Breadcrumb Header */}
@@ -114,7 +186,7 @@ export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
             Northwood United &gt; Fixtures &gt; Away Game Travel Logistics
           </div>
           <h2 className="text-lg font-bold uppercase tracking-tight text-white font-sans flex items-center gap-2">
-            <span>Away Day Logistics</span>
+            <span>Away Day Logistics &amp; Smuggling</span>
             <span className="text-xs text-amber-400 font-mono font-normal">({isAway ? 'Away Trip' : 'Home Defense'})</span>
           </h2>
         </div>
@@ -130,6 +202,67 @@ export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Sub-Tabs: Logistics vs Cargo */}
+      <div className="flex items-center gap-2 border-b border-[#25394f] pb-1">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setSubTab('logistics');
+          }}
+          className={`px-4 py-2 rounded-t font-bold text-xs flex items-center gap-2 border-b-2 transition-all ${
+            subTab === 'logistics'
+              ? 'bg-[#132030] text-amber-400 border-amber-400'
+              : 'text-slate-400 hover:text-white border-transparent'
+          }`}
+        >
+          <Bus className="w-3.5 h-3.5" />
+          <span>Transport &amp; Watering Holes</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setSubTab('cargo');
+          }}
+          className={`px-4 py-2 rounded-t font-bold text-xs flex items-center gap-2 border-b-2 transition-all ${
+            subTab === 'cargo'
+              ? 'bg-[#132030] text-amber-400 border-amber-400'
+              : 'text-slate-400 hover:text-white border-transparent'
+          }`}
+        >
+          <Package className="w-3.5 h-3.5" />
+          <span>Cargo &amp; Black Market</span>
+          {manifest.totalUnits > 0 && (
+            <span className="bg-amber-400 text-black text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              {manifest.totalUnits}/50
+            </span>
+          )}
+          {manifest.awayCityHeat > 0 && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+              manifest.awayCityHeat > 50 ? 'bg-rose-900 text-rose-200 animate-pulse' : 'bg-slate-800 text-slate-300'
+            }`}>
+              Heat: {manifest.awayCityHeat}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Cargo Smuggling Tab */}
+      {subTab === 'cargo' ? (
+        <AwayCargoPlanner
+          manifest={manifest}
+          treasury={treasury}
+          awayCityName={nextFixture?.venueName || 'Away Destination'}
+          onUpdateManifest={handleUpdateManifest}
+          onDeductTreasury={onDeductTreasury || (() => true)}
+          onAddTreasury={onAddTreasury || (() => {})}
+          onOpenMarket={() => setIsMarketOpen(true)}
+        />
+      ) : (
+        <>
 
       {/* Fixture Context Strip */}
       <div className="fm-panel p-3.5 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -463,6 +596,20 @@ export const AwayTravelPlanner: React.FC<AwayTravelPlannerProps> = ({
           </div>
         </div>
       </div>
+      </>
+      )}
+
+      {/* Away Market Modal */}
+      {isMarketOpen && (
+        <AwayMarketModal
+          manifest={manifest}
+          awayCityName={nextFixture?.venueName || 'Away City'}
+          treasury={treasury}
+          onSellItem={handleSellItem}
+          onLiquidateAll={handleLiquidateAll}
+          onClose={() => setIsMarketOpen(false)}
+        />
+      )}
     </div>
   );
 };

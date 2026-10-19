@@ -33,6 +33,7 @@
   - [5.4 Touchline & Pavement Shouts](#54-touchline--pavement-shouts)
   - [5.5 The Police Vanguard Radar](#55-the-police-vanguard-radar)
   - [5.6 Resolution & The Sunday Gazette Report](#56-resolution--the-sunday-gazette-report)
+  - [5.7 SFS 3D ASCII Renderer Integration](#57-sfs-3d-ascii-renderer-integration)
 - [Part 6 — Terrace Culture & Fan Loyalty](#part-6--terrace-culture--fan-loyalty)
   - [6.1 Loyalty Tiers](#61-loyalty-tiers)
   - [6.2 Street Respect Points](#62-street-respect-points)
@@ -42,9 +43,28 @@
   - [7.1 Territorial Control Points](#71-territorial-control-points)
   - [7.2 Fortifying Defenses](#72-fortifying-defenses)
   - [7.3 Scouting & Recruiting Casuals](#73-scouting--recruiting-casuals)
-- [Part 8 — Appendices](#part-8--appendices)
+- [Part 8 — Black Market & Contraband Trading](#part-8--black-market--contraband-trading)
+  - [8.1 Cargo Manifest & Goods Types](#81-cargo-manifest--goods-types)
+  - [8.2 Transit Routes & Travel Police Stops](#82-transit-routes--travel-police-stops)
+  - [8.3 The Away Market & Heat Accumulation](#83-the-away-market--heat-accumulation)
+  - [8.4 Police Raid & Asset Confiscation (>50 Heat)](#84-police-raid--asset-confiscation-50-heat)
+- [Part 9 — The City & Urban Ecology](#part-9--the-city--urban-ecology)
+  - [9.1 The Six Urban Districts](#91-the-six-urban-districts)
+  - [9.2 Club Success & Dynamic Growth Tiers](#92-club-success--dynamic-growth-tiers)
+  - [9.3 Council Housing Estate Recruitment](#93-council-housing-estate-recruitment)
+- [Part 10 — Door Security: The Night Job](#part-10--door-security-the-night-job)
+  - [10.1 Venue Control States & Takeovers](#101-venue-control-states--takeovers)
+  - [10.2 Assigning Door Minders & Wages](#102-assigning-door-minders--wages)
+  - [10.3 Resolving Nightlife Door Events](#103-resolving-nightlife-door-events)
+- [Part 11 — Territory Wars: The Map](#part-11--territory-wars-the-map)
+  - [11.1 The Five City Zones & Dominance](#111-the-five-city-zones--dominance)
+  - [11.2 Declaring a War (100 Heat Cost)](#112-declaring-a-war-100-heat-cost)
+  - [11.3 The 3-Day War Campaign](#113-the-3-day-war-campaign)
+  - [11.4 Victory Perks & Defeat Fallout](#114-victory-perks--defeat-fallout)
+- [Part 12 — Appendices](#part-12--appendices)
   - [Appendix A: SFS Club & Firm Reference](#appendix-a-sfs-club--firm-reference)
   - [Appendix B: Formation Cheat Sheet](#appendix-b-formation-cheat-sheet)
+  - [Appendix C: Subsystem Interaction Matrix](#appendix-c-subsystem-interaction-matrix)
 
 ---
 
@@ -224,6 +244,20 @@ As manager, you can shout real-time tactical commands:
 
 A live ETA gauge tracks approaching police vans. When distance drops below $30\%$, two-tone sirens echo down the street. If the timer reaches zero before the clash ends, Tactical Support Units deploy dogs and vans, dispersing the fight and arresting exposed lads.
 
+## 5.7 SFS 3D ASCII Renderer Integration
+
+The matchday clash engine features a real-time **3D ASCII Viewport** adapted directly from the SFS v0.1 base engine (`src/renderers/asciiLibRenderer.ts`):
+- **Live View Switcher**: Toggle fluidly between the iconic **SFS 3D ASCII Renderer** and the **2D Tactical Pitch** during live clashes.
+- **Raycast Ground Environments**:
+  - *High Street Cobbles*: Wet Victorian stone flags with curbs and rain sheens.
+  - *Railway Station Platforms*: Steel train tracks, gravel ballast, and platform edges.
+  - *Sticky Pub Carpets*: Beer-stained floral tavern patterns and floorboards.
+- **3D Casual Figures**: Skeletal capsules represent lads and rivals in dark jeans, trainers, and designer Stone Island coats with shoulder badges.
+- **Camera Perspectives**:
+  - *Hero Cam*: Locks onto the Top Boy, smoothly following frontline movements.
+  - *Broadcast Cam*: Elevated sideline view of the full street battle.
+  - *Follow Cam*: Over-the-shoulder chase angle behind the frontline charge.
+
 ---
 
 # Part 6 — Terrace Culture & Fan Loyalty
@@ -252,7 +286,169 @@ From **The Stronghold** tab, manage your home pub headquarters:
 
 ---
 
-# Part 8 — Appendices
+# Part 8 — Black Market & Contraband Trading
+
+## 8.1 Cargo Manifest & Goods Types
+
+Before away trips, the firm can conduct high-risk, high-reward black market trading runs from the **Cargo & Black Market** sub-tab in **Away Travel**:
+- **Cargo Hold**: The firm van or coach boot holds up to **50 units** of smuggled goods.
+- **Three Tiers of Contraband**:
+  - **Bootleg Goods**: Pirate Derby tapes, knitted bar scarves, white-label acid house vinyl.
+    * *Buy*: £12–£22 | *Sell*: £28–£50 | *Heat*: +4–6 per unit.
+    * *Profile*: Low entry cost, high reliability, safe profit margins.
+  - **Contraband Goods**: Vintage Italian tracktops (Tacchini & Fila), smuggled Trappist lager crates, surplus marine smoke flares.
+    * *Buy*: £32–£48 | *Sell*: £80–£115 | *Heat*: +12–16 per unit.
+    * *Profile*: Standard terrace black market items. Triples investment with moderate attention.
+  - **Premium Street Contraband**: Deadstock 1988 Stone Island ice coats, imported Swiss chronograph tickers.
+    * *Buy*: £95–£145 | *Sell*: £245–£380 | *Heat*: +22–28 per unit.
+    * *Profile*: Extreme profit yields; heavy customs and vice squad scrutiny.
+
+## 8.2 Transit Routes & Travel Police Stops
+
+Choose your transport transit route carefully:
+- **Motorway (M-Ways)**: Fast transit with standard motorway service station stops. Moderate risk of police traffic patrols.
+- **A-Roads**: Backroads and bypasses. Low detection risk and high stealth, but slower transit.
+- **Train Network**: British Rail Football Specials. High terrace morale, but heavy British Transport Police presence at terminal platforms.
+- **Travel Events**: Random events can trigger on the road (police stop & search, bribing customs sergeants, sniffer dogs, or clean runs).
+
+## 8.3 The Away Market & Heat Accumulation
+
+- Upon arriving at the away city, the **Away Street Market** opens (`<AwayMarketModal />`).
+- Unload goods individually or liquidate the entire boot in one click.
+- Cash from sales flows directly into the firm treasury.
+- Selling smuggled contraband increases **Away City Heat** ($0\text{--}100$).
+
+## 8.4 Police Raid & Asset Confiscation (>50 Heat)
+
+- If Away City Heat exceeds **50/100**, police spotters flag the firm assembly.
+- Upon initiating the matchday clash, **Operation Tactical Sweep** triggers automatically:
+  - The clash is **CANCELLED** by riot police cordons.
+  - **50% of the firm's liquid treasury is confiscated** under the Proceeds of Crime Act.
+  - The firm suffers $-25$ Street Respect and $-10\%$ Loyalty.
+  - *Manager Rule*: Keep contraband sales measured to stay under the 50 heat threshold before derby matches!
+
+---
+
+# Part 9 — The City & Urban Ecology
+
+## 9.1 The Six Urban Districts
+
+Access **The City** tab to view your club's home metropolitan sprawl across six district sectors:
+1. **Pubs & Alehouses**: Traditional assembly points with rowdy taprooms and local ales.
+2. **Nightclubs & Raves**: Acid house discotheques, warehouse raves, and high-take door venues.
+3. **Caffs & Bistros**: Corner fry-ups, pie & mash shops, and strategy meeting locations.
+4. **Council Housing Estates**: Concrete tower blocks; the raw street talent pipeline.
+5. **Posh Quarters**: Upscale restaurants, boutiques, and luxury sports car showrooms.
+6. **Industrial Sidings**: Canal towpaths, scrap yards, and container depots for secluded rumbles.
+
+## 9.2 Club Success & Dynamic Growth Tiers
+
+The city grows organically as your football club wins matches in SFS v0.1:
+- Winning league matches awards $+4$ to the **Urban Prosperity Score** ($0\text{--}100$).
+- Advancing through prosperity scores promotes the city across 5 historical stages:
+  - *Tier 1: Gritty Mill Town*
+  - *Tier 2: Developing Industrial Hub*
+  - *Tier 3: Booming Regional Centre*
+  - *Tier 4: Prosperous Metro*
+  - *Tier 5: Cosmopolitan Football Capital*
+- Each tier unlocks new commercial venues, higher weekly revenues, and wealthier away fan targets.
+
+## 9.3 Council Housing Estate Recruitment
+
+Use the **Estate Casuals Draft** shortcut in the Council Estate district to scout young local street fighters into your squad:
+- **+ Runner (£80)**: High sprint pace and alley escape instincts.
+- **+ Minder (£110)**: Heavyweight street bouncer with natural hardness.
+- **+ Nutter (£130)**: Fearless terrace warrior with maximum bottle and punch power.
+
+---
+
+# Part 10 — Door Security: The Night Job
+
+## 10.1 Venue Control States & Takeovers
+
+Under the **Door Security (The Night Job)** sub-tab, the firm manages nightclub and pub door security:
+- **Uncontrolled**: Neutral premises; rival firms operate freely; zero door revenue.
+- **Controlled**: Your firm minders run the ropes; collects weekly door cut (`weeklyTake`).
+- **Contested**: Rival firm is actively trying to muscle into the door take.
+
+### Takeover Methods
+1. **Hostile Takeover**: Stage a violent door scrap to eject current security. Instant street clash.
+2. **Bribe the Owner (£450)**: Slip a brown envelope to the licensee for an immediate peaceful door contract.
+3. **Intimidate the Owner**: Requires $\ge 450$ Street Respect. The owner folds under your firm's reputation.
+
+## 10.2 Assigning Door Minders & Wages
+
+- Assign active Casuals from your squad to work venue doors.
+- Key Minder Attributes:
+  - **Hardness (STR)**: Resists aggressive punters and controls queues.
+  - **Bottle (Courage)**: Stands tall when outnumbered by rival crews.
+- **Staff Wages**: Each active minder costs **£150 / week**, automatically deducted from the treasury during Sunday morning settlement.
+- **Net Profit**: Total weekly door revenue equals gross venue door cuts minus total minder wages.
+
+## 10.3 Resolving Nightlife Door Events
+
+Controlled doors experience weekly confrontations via the `<DoorEventModal />`:
+- **The Unruly Punter**: Drunk rival lad tries pushing past the ropes.
+  - *Turn him away*: Requires Bottle $\ge 65$; protects door respect.
+  - *Let him in*: Avoids a scrap, but patrons lose respect ($-20$ Respect).
+  - *Alley lesson*: Enforces respect with fists (+30 Respect; triggers a mini-brawl).
+- **The Police Licensing Inspection**: Local vice squad arrives.
+  - *Bribe Sergeant (£500)*: Keeps premises off the radar ($-15$ Police Heat).
+  - *Refuse Entry*: Stand on legal rights (+20 Respect; $+20$ Police Heat).
+  - *Stall for time*: Hide backroom contraband; neutral outcome.
+- **Rival Top Boy Confrontation**: Rival firm lieutenant demands 50% of the door.
+  - *Stand Ground*: Calls the lads to meet them head-on; triggers an instant street clash!
+  - *Back Down*: Surrender the door; venue reverts to uncontrolled or rival ownership.
+  - *Pay Protection (£400)*: Temporary truce payment.
+
+---
+
+# Part 11 — Territory Wars: The Map
+
+## 11.1 The Five City Zones & Dominance
+
+Under the **Territory Wars (The Map)** sub-tab, monitor city dominance across 5 key zones:
+1. **The Stadium Quarter**: Turnstiles & matchday epicenter.
+   * *Perk*: $+25\%$ Fan loyalty & home matchday advantage.
+2. **The High Street**: Busy retail strip & high-take commercial bars.
+   * *Perk*: $+£350$ Weekly commercial door revenue bonus.
+3. **The Station Approach**: Railway arches & transport choke-points.
+   * *Perk*: Early away fan detection ($+20$ Stealth on away trips).
+4. **The Docks**: Waterfront container depots & smuggling wharves.
+   * *Perk*: $+30\%$ Contraband hold capacity & lower buy prices.
+5. **The Council Estate**: High-rise residential precinct.
+   * *Perk*: $-30\%$ Recruitment cost for Minders and Nutters.
+
+*Dominance Rule*: Controlling venues and deploying minders increases your dominance percentage ($0\text{--}100\%$). Holding $>50\%$ dominance awards full territorial control and activates the strategic perk.
+
+## 11.2 Declaring a War (100 Heat Cost)
+
+- When targeting a rival-held territory, click **"Declare War"**.
+- **Declaration Cost**: Spikes Police Heat by **+100%** across the city.
+- **Council of War**: Commit up to **20 Casuals** from your roster to fight the campaign.
+
+## 11.3 The 3-Day War Campaign
+
+Territory Wars are not single scraps; they are multi-day tactical campaigns:
+- **Day 1: Street Skirmishes**: Fast-paced 1v1 scout duels down back alleys to break perimeter lookouts.
+- **Day 2: Industrial Brawl**: 8v8 arranged rumble in warehouse container yards away from police patrols.
+- **Day 3: Primary Pub Raid**: Full-firm storming of the rival stronghold taproom.
+
+## 11.4 Victory Perks & Defeat Fallout
+
+- **Win 2 of 3 Clashes**:
+  - The territory is **SEIZED**.
+  - Dominance surges to $75\text{--}80\%$; rival presence is shattered.
+  - **+75 Street Respect**, **+15% Fan Loyalty**.
+  - **+20% Permanent Revenue Boost** to all venues in that territory.
+- **Lose 2 of 3 Clashes**:
+  - Campaign fails; rival firm cements its grip.
+  - $-40$ Street Respect, $-15\%$ Loyalty.
+  - Committed lads suffer injuries and hospitalizations.
+
+---
+
+# Part 12 — Appendices
 
 ## Appendix A: SFS Club & Firm Reference
 
@@ -285,6 +481,18 @@ From **The Stronghold** tab, manage your home pub headquarters:
 - **Box Retain**: Best against superior numbers and police kettles; low forward strike power.
 - **Alley Ambush**: Best for baiting aggressive firms into chokepoints.
 
+## Appendix C: Subsystem Interaction Matrix
+
+| Subsystem | Driven By | Outputs / Influences | Key Failure State |
+|---|---|---|---|
+| **SFS Football Engine** | Tactical board & player form | Fan Loyalty, City Prosperity Index | Club relegation; fan apathy |
+| **3D ASCII Clash Renderer** | Pinhole camera & raycasting | Visual battle immersion, Hero tracking | Dispersal by police sirens |
+| **Black Market Trading** | Away transit & cargo manifest | Firm treasury, Away City Heat | Police Raid confiscation (>50 heat) |
+| **Urban Ecology (City)** | Football team win streaks | Venue unlocks, district prosperity | Stagnant town tier from club losses |
+| **Door Security** | Door Minders (Hardness/Bottle) | Weekly door takes minus £150 wages | Door takeover by rival firm |
+| **Territory Wars** | Multi-day campaigns (20 Lads) | Sector dominance (50%+), strategic perks | Hospitalized lads, $-40$ respect |
+
 ---
 
-*Firm U lator v0.1 — Stand your ground, plan your away days, and honor the colors.*
+*Firm U lator v0.1 — Stand your ground, run the doors, plan your away days, and honor the colors.*
+

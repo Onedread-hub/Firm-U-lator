@@ -1,3 +1,5 @@
+import { CargoManifest } from './trading';
+
 export type LadRole = 'top_boy' | 'face' | 'minder' | 'runner' | 'nutter' | 'bruiser' | 'veteran' | 'casual' | 'scout';
 export type LadStatus = 'active' | 'injured' | 'bailed' | 'banned' | 'hospitalised';
 export type SfsRegion = 'Northern' | 'Midlands' | 'Coastal' | 'Southern';
@@ -69,6 +71,8 @@ export interface AwayTravelPlan {
   stealthBonus: number;
   loyaltyImpact: number;
   policeHeatRisk: number;
+  cargoManifest?: CargoManifest;
+  awayCityHeat?: number;
 }
 
 export type LoyaltyTier = 'Diehards' | 'Away Veterans' | 'Weekend Casuals' | 'Youth Ultras';
@@ -193,4 +197,5 @@ export interface GameSaveState {
   news: TerraceNews[];
   clashHistory: ClashOutcome[];
   cityState?: any;
+  awayCityHeat?: number;
 }

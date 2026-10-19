@@ -17,7 +17,8 @@ import {
   INITIAL_TERRITORIES,
   INITIAL_NEWS,
   DEFAULT_TACTICS,
-  DEFAULT_AWAY_PLAN
+  DEFAULT_AWAY_PLAN,
+  generateSeasonFixtures
 } from './data/initialData';
 import { Navbar, ActiveTab } from './components/Navbar';
 import { OfficeView } from './components/OfficeView';
@@ -35,6 +36,14 @@ import { sound } from './services/sound';
 import { CityState, CityVenue } from './types/city';
 import { generateInitialCityState } from './data/cityData';
 import { FirmClashEvent } from './types/firmIntegration';
+import { Venue, Territory as WarTerritory, TerritoryWarCampaign, DoorEvent, DoorChoice } from './types/territoryWars';
+import {
+  INITIAL_VENUES as INITIAL_WAR_VENUES,
+  INITIAL_TERRITORIES as INITIAL_WAR_TERRITORIES,
+  createDoorEventForVenue,
+  createWarCampaign
+} from './data/territoryWarsData';
+import { DoorEventModal } from './components/DoorEventModal';
 import { Sparkles } from 'lucide-react';
 
 const STORAGE_KEY = 'firm_u_lator_save_sfs_v2';
@@ -63,6 +72,12 @@ export default function App() {
     return generateInitialCityState(firm.city, firm.footballClub, 75);
   });
 
+  // Nightlife Door Security & Territory Wars Subsystem
+  const [warVenues, setWarVenues] = useState<Venue[]>(INITIAL_WAR_VENUES);
+  const [warTerritories, setWarTerritories] = useState<WarTerritory[]>(INITIAL_WAR_TERRITORIES);
+  const [activeCampaign, setActiveCampaign] = useState<TerritoryWarCampaign | null>(null);
+  const [activeDoorEvent, setActiveDoorEvent] = useState<{ event: DoorEvent; venue: Venue } | null>(null);
+
   // Modals & Overlays
   const [isClubModalOpen, setIsClubModalOpen] = useState<boolean>(false);
   const [incomingCall, setIncomingCall] = useState<{
@@ -87,10 +102,11 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: GameSaveState = JSON.parse(saved);
-        if (parsed.playerFirmId && INITIAL_FIRMS.some(f => f.id === parsed.playerFirmId)) {
-          setPlayerFirmId(parsed.playerFirmId);
-        }
-        setCurrentRound(parsed.currentRound || 1);
+        const targetPlayerFirmId = parsed.playerFirmId && INITIAL_FIRMS.some(f => f.id === parsed.playerFirmId)
+          ? parsed.playerFirmId
+          : 'firm_northwood';
+        setPlayerFirmId(targetPlayerFirmId);
+        setCurrentRound(Number(parsed.currentRound) || 1);
         setTreasury(parsed.treasury || 750);
         setPoliceHeat(parsed.policeHeat || 35);
         setRespect(parsed.respect || 540);
@@ -98,7 +114,23 @@ export default function App() {
         if (parsed.lads && parsed.lads.length > 0) setLads(parsed.lads);
         if (parsed.tactics) setTactics(parsed.tactics);
         if (parsed.awayTravelPlan) setAwayPlan(parsed.awayTravelPlan);
-        if (parsed.fixtures && parsed.fixtures.length > 0) setFixtures(parsed.fixtures);
+
+        // Sanity check fixtures: ensure player's firm has unplayed fixtures scheduled
+        if (parsed.fixtures && parsed.fixtures.length > 0) {
+          const unplayedForFirm = parsed.fixtures.filter(
+            f => !f.clashPlayed && (f.homeFirmId === targetPlayerFirmId || f.awayFirmId === targetPlayerFirmId)
+          );
+          if (unplayedForFirm.length > 0) {
+            setFixtures(parsed.fixtures);
+          } else {
+            // All fixtures for this firm were finished; generate fresh full season calendar
+            setFixtures(generateSeasonFixtures(targetPlayerFirmId, INITIAL_FIRMS, 1));
+            setCurrentRound(1);
+          }
+        } else {
+          setFixtures(generateSeasonFixtures(targetPlayerFirmId, INITIAL_FIRMS, 1));
+        }
+
         if (parsed.territories && parsed.territories.length > 0) setTerritories(parsed.territories);
         if (parsed.news && parsed.news.length > 0) setNews(parsed.news);
         if (parsed.cityState) setCityState(parsed.cityState);
@@ -139,7 +171,10 @@ export default function App() {
 
   // Derive Current Fixture & Rival
   const playerFirm = firms.find(f => f.id === playerFirmId) || firms[0];
-  const activeFixture = fixtures.find(f => f.round === currentRound && !f.clashPlayed);
+  // Always find the next unplayed fixture involving the player firm!
+  const activeFixture =
+    fixtures.find(f => f.round === currentRound && !f.clashPlayed && (f.homeFirmId === playerFirm.id || f.awayFirmId === playerFirm.id)) ||
+    fixtures.find(f => !f.clashPlayed && (f.homeFirmId === playerFirm.id || f.awayFirmId === playerFirm.id));
   const rivalFirmId = activeFixture
     ? activeFixture.homeFirmId === playerFirm.id
       ? activeFixture.awayFirmId
@@ -205,41 +240,8 @@ export default function App() {
       ...prev.slice(1)
     ]);
 
-    // Retarget fixtures so player firm is the protagonist
-    const rivalCandidates = firms.filter(f => f.id !== firmId);
-    const updatedFixtures: Fixture[] = [
-      {
-        id: 'fix_1',
-        round: 1,
-        homeFirmId: firmId,
-        awayFirmId: rivalCandidates[0]?.id || 'firm_kingsbridge',
-        venueName: `${newFirm.city} High St & Station Concourse`,
-        location: `${newFirm.city} (${newFirm.region})`,
-        footballFixture: `${newFirm.footballClub} vs ${rivalCandidates[0]?.footballClub || 'Kingsbridge Ath.'}`,
-        clashPlayed: false
-      },
-      {
-        id: 'fix_2',
-        round: 2,
-        homeFirmId: rivalCandidates[1]?.id || 'firm_westport',
-        awayFirmId: firmId,
-        venueName: `${rivalCandidates[1]?.stadium || 'Away Ground'} Approach`,
-        location: `${rivalCandidates[1]?.city || 'Westport'} (${rivalCandidates[1]?.region || 'Coastal'})`,
-        footballFixture: `${rivalCandidates[1]?.footballClub || 'Westport City'} vs ${newFirm.footballClub}`,
-        clashPlayed: false
-      },
-      {
-        id: 'fix_3',
-        round: 3,
-        homeFirmId: firmId,
-        awayFirmId: rivalCandidates[2]?.id || 'firm_millwall_cross',
-        venueName: `${newFirm.pubStronghold} Exterior`,
-        location: `${newFirm.city} (${newFirm.region})`,
-        footballFixture: `${newFirm.footballClub} vs ${rivalCandidates[2]?.footballClub || 'Millwall Cross'}`,
-        clashPlayed: false,
-        isDerby: true
-      }
-    ];
+    // Generate full authentic season calendar for newly chosen firm
+    const updatedFixtures = generateSeasonFixtures(firmId, firms, 1);
     setFixtures(updatedFixtures);
     setCurrentRound(1);
     setCityState(generateInitialCityState(newFirm.city, newFirm.footballClub, newFirm.clubBand === 'Elite' ? 85 : 70));
@@ -360,10 +362,20 @@ export default function App() {
   const handleReturnToOffice = () => {
     const outcome = currentOutcome;
     setCurrentOutcome(null);
-    setCurrentRound(prev => prev + 1);
+
+    // Advance to the round of the next unplayed fixture involving the player's firm
+    const nextUnplayed = fixtures.find(
+      f => !f.clashPlayed && f.id !== activeFixture?.id && (f.homeFirmId === playerFirm.id || f.awayFirmId === playerFirm.id)
+    );
+    if (nextUnplayed) {
+      setCurrentRound(nextUnplayed.round);
+    } else {
+      setCurrentRound(prev => Number(prev) + 1);
+    }
+
     setActiveTab('office');
 
-    // Natural weekly territory + city venues income
+    // Natural weekly territory + city venues income + nightlife door cuts minus minder wages
     const weeklyTerritoryIncome = territories
       .filter(t => t.controlledBy === playerFirm.id)
       .reduce((sum, t) => sum + t.weeklyRevenue, 0);
@@ -372,10 +384,33 @@ export default function App() {
       .filter(v => v.controlledByFirm && v.isUnlocked)
       .reduce((sum, v) => sum + v.weeklyRevenue, 0);
 
-    setTreasury(prev => prev + weeklyTerritoryIncome + cityVenueIncome);
+    const doorGross = warVenues
+      .filter(v => v.ownerFirmId === playerFirm.id)
+      .reduce((sum, v) => sum + v.weeklyTake, 0);
+
+    const mindersCount = warVenues
+      .filter(v => v.ownerFirmId === playerFirm.id)
+      .reduce((sum, v) => sum + v.doorStaffIds.length, 0);
+
+    const minderWages = mindersCount * 150;
+    const netDoorIncome = doorGross - minderWages;
+
+    setTreasury(prev => Math.max(0, prev + weeklyTerritoryIncome + cityVenueIncome + netDoorIncome));
 
     // Police heat decay
     setPoliceHeat(prev => Math.max(15, prev - 8));
+
+    // Weekly Door Event chance (35%) on controlled venues
+    if (Math.random() < 0.35) {
+      const controlled = warVenues.filter(v => v.ownerFirmId === playerFirm.id);
+      if (controlled.length > 0) {
+        const randomVenue = controlled[Math.floor(Math.random() * controlled.length)];
+        const evt = createDoorEventForVenue(randomVenue);
+        setTimeout(() => {
+          setActiveDoorEvent({ event: evt, venue: randomVenue });
+        }, 1200);
+      }
+    }
 
     // Dynamic SFS City Growth progression:
     // When the team plays matches or firm claims prestige, the city expands!
@@ -495,6 +530,208 @@ export default function App() {
     showToast(`Recruited ${newLad.name} "${newLad.nickname}" from the council estate!`);
   };
 
+  // Door Security & Minders
+  const handleAssignMinder = (venueId: string, ladId: string) => {
+    setWarVenues(prev =>
+      prev.map(v => {
+        if (v.id === venueId && !v.doorStaffIds.includes(ladId)) {
+          return { ...v, doorStaffIds: [...v.doorStaffIds, ladId] };
+        }
+        return v;
+      })
+    );
+    showToast('Door minder assigned! (£150/wk wage)');
+  };
+
+  const handleRemoveMinder = (venueId: string, ladId: string) => {
+    setWarVenues(prev =>
+      prev.map(v => {
+        if (v.id === venueId) {
+          return { ...v, doorStaffIds: v.doorStaffIds.filter(id => id !== ladId) };
+        }
+        return v;
+      })
+    );
+    showToast('Door minder relieved from duty.');
+  };
+
+  const handleTakeoverVenue = (venueId: string, method: 'hostile' | 'bribe' | 'intimidate') => {
+    const venue = warVenues.find(v => v.id === venueId);
+    if (!venue) return;
+
+    if (method === 'bribe') {
+      if (treasury < 450) {
+        showToast('Insufficient funds! Need £450 to bribe licensee.');
+        return;
+      }
+      setTreasury(t => t - 450);
+      setWarVenues(prev =>
+        prev.map(v => (v.id === venueId ? { ...v, ownerFirmId: playerFirm.id, status: 'controlled' } : v))
+      );
+      showToast(`Licensee bribed! ${venue.name} door secured.`);
+    } else if (method === 'intimidate') {
+      if (respect < 450) {
+        showToast('Respect too low! Need 450+ respect to intimidate owner.');
+        return;
+      }
+      setWarVenues(prev =>
+        prev.map(v => (v.id === venueId ? { ...v, ownerFirmId: playerFirm.id, status: 'controlled' } : v))
+      );
+      setRespect(r => r + 20);
+      showToast(`Owner intimidated by firm reputation! ${venue.name} surrendered.`);
+    } else if (method === 'hostile') {
+      sound.playWhistle();
+      setWarVenues(prev =>
+        prev.map(v => (v.id === venueId ? { ...v, ownerFirmId: playerFirm.id, status: 'controlled' } : v))
+      );
+      setRespect(r => r + 35);
+      setPoliceHeat(h => Math.min(100, h + 20));
+      showToast(`Hostile takeover successful! Door secured in violent street scrap.`);
+    }
+  };
+
+  const handleTriggerDoorEvent = (venueId: string) => {
+    const venue = warVenues.find(v => v.id === venueId);
+    if (!venue) return;
+    const evt = createDoorEventForVenue(venue);
+    setActiveDoorEvent({ event: evt, venue });
+  };
+
+  const handleResolveDoorEventChoice = (choice: DoorChoice, choiceIndex: number) => {
+    if (!activeDoorEvent) return;
+    const { venue } = activeDoorEvent;
+
+    setTreasury(t => Math.max(0, t + choice.treasuryDelta));
+    setRespect(r => Math.max(50, r + choice.respectDelta));
+    setPoliceHeat(h => Math.max(0, Math.min(100, h + choice.heatDelta)));
+
+    if (choice.triggerClash) {
+      sound.playWhistle();
+      showToast(`BRAWL ON THE DOOR: Violent standoff erupted outside ${venue.name}!`);
+    } else {
+      showToast(`Resolved door incident at ${venue.name}: ${choice.label}`);
+    }
+
+    setActiveDoorEvent(null);
+  };
+
+  // Territory Wars Campaign
+  const handleDeclareWar = (territoryId: string, targetFirmId: string, committedLadIds: string[]) => {
+    const territory = warTerritories.find(t => t.id === territoryId);
+    const targetFirm = firms.find(f => f.id === targetFirmId);
+    if (!territory || !targetFirm) return;
+
+    // Cost: 100 Police Heat
+    setPoliceHeat(h => Math.min(100, h + 100));
+    const campaign = createWarCampaign(territory, targetFirm.id, targetFirm.name, committedLadIds);
+    setActiveCampaign(campaign);
+    showToast(`WAR DECLARED: Police heat spiked to maximum across ${territory.name}!`);
+  };
+
+  const handleResolveDayBattle = (won: boolean, scoreSummary: string) => {
+    if (!activeCampaign) return;
+
+    const nextWins = won ? activeCampaign.wins + 1 : activeCampaign.wins;
+    const nextLosses = !won ? activeCampaign.losses + 1 : activeCampaign.losses;
+    const nextDay = activeCampaign.currentDay + 1;
+
+    const updatedDays = activeCampaign.days.map(d => {
+      if (d.day === activeCampaign.currentDay) {
+        return { ...d, resolved: true, won, scoreSummary };
+      }
+      return d;
+    });
+
+    const isFinished = nextWins >= 2 || nextLosses >= 2 || nextDay > 3;
+
+    if (isFinished) {
+      const overallWon = nextWins > nextLosses;
+      if (overallWon) {
+        sound.playCheer();
+        setRespect(r => r + 75);
+        setLoyaltyIndex(l => Math.min(100, l + 15));
+        setWarTerritories(prev =>
+          prev.map(t => {
+            if (t.id === activeCampaign.territoryId) {
+              return {
+                ...t,
+                controllingFirmId: playerFirm.id,
+                dominance: {
+                  ...t.dominance,
+                  [playerFirm.id]: Math.min(100, (t.dominance[playerFirm.id] || 40) + 35),
+                  [activeCampaign.targetFirmId]: Math.max(5, (t.dominance[activeCampaign.targetFirmId] || 40) - 30)
+                }
+              };
+            }
+            return t;
+          })
+        );
+        // Boost venues in that territory
+        setWarVenues(prev =>
+          prev.map(v => {
+            if (v.territoryId === activeCampaign.territoryId) {
+              return {
+                ...v,
+                ownerFirmId: playerFirm.id,
+                status: 'controlled',
+                weeklyTake: Math.floor(v.weeklyTake * 1.2)
+              };
+            }
+            return v;
+          })
+        );
+        showToast(`TERRITORY CONQUERED: Total dominance seized over ${activeCampaign.territoryName}!`);
+      } else {
+        sound.playHit();
+        setRespect(r => Math.max(50, r - 40));
+        setLoyaltyIndex(l => Math.max(10, l - 15));
+        // Injure some committed lads
+        setLads(prev =>
+          prev.map(l => {
+            if (activeCampaign.committedLadIds.includes(l.id) && Math.random() < 0.35) {
+              return { ...l, status: 'injured', health: 30 };
+            }
+            return l;
+          })
+        );
+        showToast(`CAMPAIGN DEFEAT: Rival firm held ${activeCampaign.territoryName}. Multiple lads injured.`);
+      }
+
+      setActiveCampaign({
+        ...activeCampaign,
+        wins: nextWins,
+        losses: nextLosses,
+        days: updatedDays,
+        status: overallWon ? 'won' : 'lost'
+      });
+    } else {
+      setActiveCampaign({
+        ...activeCampaign,
+        wins: nextWins,
+        losses: nextLosses,
+        currentDay: nextDay,
+        days: updatedDays
+      });
+      showToast(`Day ${activeCampaign.currentDay} concluded: ${won ? 'Victory' : 'Defeat'}. Moving to Day ${nextDay}.`);
+    }
+  };
+
+  const handleAbandonCampaign = () => {
+    setActiveCampaign(null);
+    setRespect(r => Math.max(50, r - 25));
+    showToast('War campaign called off. Respect damaged (-25).');
+  };
+
+  const handleStartNextSeason = () => {
+    const nextSeasonNum = Math.floor(fixtures.length / 10) + 1;
+    const newFixtures = generateSeasonFixtures(playerFirm.id, firms, nextSeasonNum);
+    setFixtures(newFixtures);
+    setCurrentRound(1);
+    setRespect(prev => prev + 50); // Season completion bonus
+    setTreasury(prev => prev + 500); // Season dividend
+    showToast(`NEW SEASON: Season ${nextSeasonNum} calendar generated! 10 new matchday clashes scheduled.`);
+  };
+
   const handleResetCampaign = () => {
     if (window.confirm('Reset Firm U lator campaign to initial SFS season state?')) {
       localStorage.removeItem(STORAGE_KEY);
@@ -573,6 +810,18 @@ export default function App() {
         />
       )}
 
+      {/* Nightlife Door Event Modal */}
+      {activeDoorEvent && (
+        <DoorEventModal
+          event={activeDoorEvent.event}
+          venue={activeDoorEvent.venue}
+          assignedLads={lads.filter(l => activeDoorEvent.venue.doorStaffIds.includes(l.id))}
+          treasury={treasury}
+          onResolveChoice={handleResolveDoorEventChoice}
+          onClose={() => setActiveDoorEvent(null)}
+        />
+      )}
+
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
         {currentOutcome ? (
@@ -589,8 +838,13 @@ export default function App() {
             tactics={tactics}
             awayPlan={awayPlan}
             lads={lads}
+            treasury={treasury}
             onCompleteClash={handleCompleteClash}
             onCancel={() => setIsClashActive(false)}
+            onPoliceRaid={(loss) => {
+              setTreasury(t => Math.max(0, t - loss));
+              showToast(`POLICE RAID: £${loss} treasury confiscated! Clash cancelled.`);
+            }}
           />
         ) : (
           <>
@@ -608,6 +862,7 @@ export default function App() {
                 onOpenClash={handleStartClash}
                 onOpenClubModal={() => setIsClubModalOpen(true)}
                 onTriggerPhoneCall={handleTriggerPhoneCall}
+                onStartNextSeason={handleStartNextSeason}
               />
             )}
 
@@ -636,6 +891,8 @@ export default function App() {
                 treasury={treasury}
                 playerFirmId={playerFirm.id}
                 onUpdatePlan={setAwayPlan}
+                onDeductTreasury={handleDeductTreasury}
+                onAddTreasury={(amt) => setTreasury(t => t + amt)}
               />
             )}
 
@@ -646,8 +903,21 @@ export default function App() {
                 policeHeat={policeHeat}
                 respect={respect}
                 loyaltyIndex={loyaltyIndex}
+                venues={warVenues}
+                territories={warTerritories}
+                lads={lads}
+                firms={firms}
+                playerFirm={playerFirm}
+                activeCampaign={activeCampaign}
                 onExecuteVenueAction={handleExecuteVenueAction}
                 onRecruitFromEstate={handleRecruitFromEstate}
+                onAssignMinder={handleAssignMinder}
+                onRemoveMinder={handleRemoveMinder}
+                onTakeoverVenue={handleTakeoverVenue}
+                onTriggerDoorEvent={handleTriggerDoorEvent}
+                onDeclareWar={handleDeclareWar}
+                onResolveDayBattle={handleResolveDayBattle}
+                onAbandonCampaign={handleAbandonCampaign}
               />
             )}
 

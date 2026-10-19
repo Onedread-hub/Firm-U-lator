@@ -4,14 +4,32 @@
  * 
  * AsciiClashViewport.tsx
  * Interactive 3D ASCII Viewport component embedding the SFS asciiLibRenderer
- * directly into Firm U-Lator's matchday clash screen.
+ * directly into Firm U-Lator's matchday clash screen via ClashRendererAdapter.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import { ClashRendererEngine, ClashFrameData } from '../services/clashRenderer';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import {
+  ClashRendererAdapter,
+  ClashLadInput,
+  resolveGroundTexture
+} from '../services/clashRendererAdapter';
 import { CameraMode, GroundTexture, AsciiCell } from '../renderers/asciiLibRenderer';
 import { Firm, Lad, AwayTravelPlan, Tactics } from '../types/game';
-import { Camera, Eye, MapPin, Sparkles, ShieldAlert } from 'lucide-react';
+import { Camera, Eye, MapPin, ShieldAlert } from 'lucide-react';
+
+interface FighterToken {
+  id: string;
+  name: string;
+  isPlayer: boolean;
+  role: string;
+  x: number;
+  y: number;
+  rating: number;
+  hp: number;
+  maxHp: number;
+  bottle: number;
+  isPanicking: boolean;
+}
 
 interface AsciiClashViewportProps {
   playerFirm: Firm;
@@ -22,6 +40,7 @@ interface AsciiClashViewportProps {
   smokeActive: boolean;
   policeDistance: number;
   minute: number;
+  tokens?: FighterToken[];
 }
 
 export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
@@ -32,117 +51,136 @@ export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
   lads,
   smokeActive,
   policeDistance,
-  minute
+  minute,
+  tokens = []
 }) => {
   const [cameraMode, setCameraMode] = useState<CameraMode>('hero');
-  const [venueType, setVenueType] = useState<GroundTexture>(() => {
-    if (awayPlan.transportMode === 'train_special') return 'railway_station';
-    if (awayPlan.pubStrategy === 'enemy_local' || awayPlan.pubStrategy === 'lock_in_fortress') return 'pub_carpet';
-    return 'cobblestone';
-  });
+  const [venueType, setVenueType] = useState<GroundTexture>(() => resolveGroundTexture(awayPlan));
 
-  const [frameText, setFrameText] = useState<string>('');
   const [frameCells, setFrameCells] = useState<AsciiCell[][]>([]);
   const [heroTag, setHeroTag] = useState<string>('');
-  const engineRef = useRef<ClashRendererEngine | null>(null);
+  const adapterRef = useRef<ClashRendererAdapter | null>(null);
+  const animFrameIdRef = useRef<number | null>(null);
 
-  // Initialize 3D Engine on mount or when venue changes
+  // Selected lads for the clash
+  const selectedLads = useMemo(() => {
+    return lads.filter(l => tactics.selectedLadIds.includes(l.id)).slice(0, 10);
+  }, [lads, tactics.selectedLadIds]);
+
+  // Identify Top Boy / Hero
+  const topBoyLad = useMemo(() => {
+    return selectedLads.find(l => l.role === 'top_boy') || selectedLads[0];
+  }, [selectedLads]);
+
   useEffect(() => {
-    const engine = new ClashRendererEngine({
-      venueType,
-      cameraMode,
-      terminalWidth: 84,
-      terminalHeight: 26,
-      playerPrimaryColor: playerFirm.primaryColor || '#3b82f6',
-      rivalPrimaryColor: rivalFirm.primaryColor || '#ef4444'
-    });
-
-    // Spawn Player Lads
-    const selectedLads = lads.filter(l => tactics.selectedLadIds.includes(l.id)).slice(0, 7);
-    selectedLads.forEach((lad, i) => {
-      const offsetX = -3.5 + (i % 4) * 2.2;
-      const offsetZ = -3.0 + Math.floor(i / 4) * 2.5;
-      engine.spawnCasual(
-        lad.id,
-        lad.name,
-        true,
-        lad.role as any,
-        { x: offsetX, y: 0, z: offsetZ },
-        playerFirm.primaryColor || '#1e3a8a',
-        '#0f172a'
-      );
-    });
-
-    // Spawn Rival Lads
-    for (let r = 0; r < 7; r++) {
-      const offsetX = -3.0 + (r % 4) * 2.0;
-      const offsetZ = 3.5 + Math.floor(r / 4) * 2.2;
-      engine.spawnCasual(
-        `rival_${r}`,
-        `Rival Casual #${r + 1}`,
-        false,
-        r === 0 ? 'top_boy' : r < 3 ? 'minder' : 'runner',
-        { x: offsetX, y: 0, z: offsetZ },
-        rivalFirm.primaryColor || '#991b1b',
-        '#1e293b'
-      );
+    if (topBoyLad) {
+      setHeroTag(topBoyLad.name);
     }
+  }, [topBoyLad]);
 
-    // Set Top Boy hero focus
-    const topBoy = selectedLads.find(l => l.role === 'top_boy') || selectedLads[0];
-    if (topBoy) {
-      engine.setHeroFocus(topBoy.id);
-      setHeroTag(topBoy.name);
-    }
-
-    engineRef.current = engine;
-
-    // Render initial frame
-    const frame = engine.renderSingleFrame();
-    setFrameText(frame.renderedText);
-    setFrameCells(engine.blitter.getBuffer().map(row => [...row]));
-
-    // Start 60 FPS animation loop
-    engine.start();
-
-    const unsubscribe = engine.subscribe((data: ClashFrameData) => {
-      setFrameText(data.renderedText);
-      setFrameCells(engine.blitter.getBuffer().map(row => [...row]));
-    });
+  // Initialize or re-create adapter when dimensions or venue change
+  useEffect(() => {
+    const adapter = new ClashRendererAdapter(84, 26, cameraMode);
+    adapterRef.current = adapter;
 
     return () => {
-      unsubscribe();
-      engine.stop();
-      engineRef.current = null;
+      adapterRef.current = null;
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current);
+      }
     };
-  }, [venueType, playerFirm.id, rivalFirm.id]);
+  }, []);
 
-  // Sync camera mode changes
+  // Update camera mode in adapter
   useEffect(() => {
-    if (engineRef.current) {
-      engineRef.current.setCameraMode(cameraMode);
+    if (adapterRef.current) {
+      adapterRef.current.setCameraMode(cameraMode);
     }
   }, [cameraMode]);
 
-  // Sync smoke flare deployment
+  // Continuous 60fps render loop driven by requestAnimationFrame
   useEffect(() => {
-    if (smokeActive && engineRef.current) {
-      engineRef.current.deployPurpleFlare({ x: 0, y: 0, z: 0.5 });
-    }
-  }, [smokeActive]);
+    const renderLoop = () => {
+      if (!adapterRef.current) return;
 
-  // Sync police squad spawn when police ETA is low
-  useEffect(() => {
-    if (policeDistance < 35 && engineRef.current) {
-      if (!engineRef.current.entities.some(e => e.isPolice)) {
-        engineRef.current.spawnPoliceSquad(3, 16.0);
+      // Construct ClashLadInput array from live tokens or fallback to squad layout
+      let ladInputs: ClashLadInput[] = [];
+
+      if (tokens && tokens.length > 0) {
+        ladInputs = tokens.map(tok => ({
+          id: tok.id,
+          name: tok.name,
+          isPlayer: tok.isPlayer,
+          role: tok.role,
+          xPercent: tok.x,
+          yPercent: tok.y,
+          hp: tok.hp,
+          maxHp: tok.maxHp,
+          bottle: tok.bottle,
+          isPanicking: tok.isPanicking
+        }));
+      } else {
+        // Fallback initial squad placement if tokens haven't spawned yet
+        selectedLads.forEach((lad, i) => {
+          ladInputs.push({
+            id: lad.id,
+            name: lad.name,
+            isPlayer: true,
+            role: lad.role,
+            xPercent: 30 + (i % 4) * 12,
+            yPercent: 35 + Math.floor(i / 4) * 10,
+            hp: 100,
+            maxHp: 100,
+            bottle: 85,
+            isPanicking: false
+          });
+        });
+
+        for (let r = 0; r < 7; r++) {
+          ladInputs.push({
+            id: `rival_${r}`,
+            name: `Rival Casual #${r + 1}`,
+            isPlayer: false,
+            role: r === 0 ? 'top_boy' : r < 3 ? 'minder' : 'runner',
+            xPercent: 35 + (r % 4) * 12,
+            yPercent: 65 + Math.floor(r / 4) * 10,
+            hp: 100,
+            maxHp: 100,
+            bottle: 80,
+            isPanicking: false
+          });
+        }
       }
-    }
-  }, [policeDistance]);
+
+      const frame = adapterRef.current.renderFrame({
+        lads: ladInputs,
+        venueType,
+        cameraMode,
+        smokeActive,
+        policeDistance,
+        minute,
+        playerFirm,
+        rivalFirm,
+        heroLadId: topBoyLad?.id
+      });
+
+      setFrameCells(frame.cells);
+
+      animFrameIdRef.current = requestAnimationFrame(renderLoop);
+    };
+
+    animFrameIdRef.current = requestAnimationFrame(renderLoop);
+
+    return () => {
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current);
+      }
+    };
+  }, [tokens, venueType, cameraMode, smokeActive, policeDistance, minute, playerFirm, rivalFirm, topBoyLad, selectedLads]);
 
   return (
     <div className="fm-panel rounded-lg overflow-hidden border border-[#1e2f42] bg-[#070b12] text-xs">
-      {/* Top 3D Viewport Controls Bar */}
+      {/* Top 3D Viewport Controls Bar (Preserved HUD) */}
       <div className="bg-[#0b121b] border-b border-[#1e2f42] px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-slate-300">
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-amber-400 font-bold">
@@ -208,6 +246,7 @@ export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
             <option value="cobblestone">High Street Cobbles</option>
             <option value="railway_station">Station Platform & Rails</option>
             <option value="pub_carpet">Sticky Pub Carpet</option>
+            <option value="pitch">Match Pitch Slab</option>
           </select>
         </div>
       </div>
@@ -224,7 +263,7 @@ export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
         )}
 
         {/* Police Vanguard Warning Banner */}
-        {policeDistance < 35 && (
+        {policeDistance < 40 && (
           <div className="absolute top-4 right-4 bg-rose-950/85 border border-rose-500 text-rose-200 px-2.5 py-1 rounded text-[10px] font-bold flex items-center gap-1.5 shadow-lg z-10 animate-bounce">
             <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
             <span>MET POLICE TACTICAL RIOT SQUAD AT END OF ALLEY</span>
@@ -250,7 +289,7 @@ export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
           ))}
         </pre>
 
-        {/* HUD Sub-Bar */}
+        {/* HUD Sub-Bar (Preserved) */}
         <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 font-mono px-1">
           <div className="flex items-center gap-3">
             <span>

@@ -9,7 +9,10 @@
 
 import React, { useState } from 'react';
 import { CityState, CityVenue, DistrictCategory } from '../types/city';
-import { Lad } from '../types/game';
+import { Lad, Firm } from '../types/game';
+import { Venue, Territory, TerritoryWarCampaign } from '../types/territoryWars';
+import { DoorSecurityView } from './DoorSecurityView';
+import { TerritoryWarsView } from './TerritoryWarsView';
 import { sound } from '../services/sound';
 import {
   Building2,
@@ -29,7 +32,9 @@ import {
   Footprints,
   Eye,
   Coffee,
-  Crown
+  Crown,
+  ShieldCheck,
+  Swords
 } from 'lucide-react';
 
 interface CityViewProps {
@@ -38,12 +43,25 @@ interface CityViewProps {
   policeHeat: number;
   respect: number;
   loyaltyIndex: number;
+  venues: Venue[];
+  territories: Territory[];
+  lads: Lad[];
+  firms: Firm[];
+  playerFirm: Firm;
+  activeCampaign: TerritoryWarCampaign | null;
   onExecuteVenueAction: (
     venueId: string,
     actionId: string,
     action: CityVenue['actions'][0]
   ) => void;
   onRecruitFromEstate: (role: 'runner' | 'minder' | 'nutter') => void;
+  onAssignMinder: (venueId: string, ladId: string) => void;
+  onRemoveMinder: (venueId: string, ladId: string) => void;
+  onTakeoverVenue: (venueId: string, method: 'hostile' | 'bribe' | 'intimidate') => void;
+  onTriggerDoorEvent: (venueId: string) => void;
+  onDeclareWar: (territoryId: string, targetFirmId: string, committedLadIds: string[]) => void;
+  onResolveDayBattle: (won: boolean, scoreSummary: string) => void;
+  onAbandonCampaign: () => void;
 }
 
 export const CityView: React.FC<CityViewProps> = ({
@@ -52,9 +70,23 @@ export const CityView: React.FC<CityViewProps> = ({
   policeHeat,
   respect,
   loyaltyIndex,
+  venues,
+  territories,
+  lads,
+  firms,
+  playerFirm,
+  activeCampaign,
   onExecuteVenueAction,
-  onRecruitFromEstate
+  onRecruitFromEstate,
+  onAssignMinder,
+  onRemoveMinder,
+  onTakeoverVenue,
+  onTriggerDoorEvent,
+  onDeclareWar,
+  onResolveDayBattle,
+  onAbandonCampaign
 }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'districts' | 'doors' | 'territories'>('districts');
   const [activeCategory, setActiveCategory] = useState<DistrictCategory | 'all'>('all');
   const [selectedVenueId, setSelectedVenueId] = useState<string>(cityState.venues[0]?.id || '');
 
@@ -106,6 +138,95 @@ export const CityView: React.FC<CityViewProps> = ({
 
   return (
     <div className="space-y-5 pb-12">
+      {/* Sub-Tabs: Districts vs Door Security vs Territory Wars */}
+      <div className="flex items-center gap-2 border-b border-[#25394f] pb-1">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setActiveSubTab('districts');
+          }}
+          className={`px-4 py-2 rounded-t font-bold text-xs flex items-center gap-2 border-b-2 transition-all ${
+            activeSubTab === 'districts'
+              ? 'bg-[#132030] text-amber-400 border-amber-400'
+              : 'text-slate-400 hover:text-white border-transparent'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>Districts & Urban Growth</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setActiveSubTab('doors');
+          }}
+          className={`px-4 py-2 rounded-t font-bold text-xs flex items-center gap-2 border-b-2 transition-all ${
+            activeSubTab === 'doors'
+              ? 'bg-[#132030] text-amber-400 border-amber-400'
+              : 'text-slate-400 hover:text-white border-transparent'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Door Security (The Night Job)</span>
+          <span className="bg-emerald-950 text-emerald-400 border border-emerald-700 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+            {venues.filter(v => v.ownerFirmId === playerFirm.id).length} Doors
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setActiveSubTab('territories');
+          }}
+          className={`px-4 py-2 rounded-t font-bold text-xs flex items-center gap-2 border-b-2 transition-all ${
+            activeSubTab === 'territories'
+              ? 'bg-[#132030] text-amber-400 border-amber-400'
+              : 'text-slate-400 hover:text-white border-transparent'
+          }`}
+        >
+          <Swords className="w-3.5 h-3.5" />
+          <span>Territory Wars (The Map)</span>
+          {activeCampaign && (
+            <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+              WAR ACTIVE
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeSubTab === 'doors' ? (
+        <DoorSecurityView
+          venues={venues}
+          lads={lads}
+          playerFirm={playerFirm}
+          treasury={treasury}
+          respect={respect}
+          policeHeat={policeHeat}
+          onAssignMinder={onAssignMinder}
+          onRemoveMinder={onRemoveMinder}
+          onTakeoverVenue={onTakeoverVenue}
+          onTriggerDoorEvent={onTriggerDoorEvent}
+        />
+      ) : activeSubTab === 'territories' ? (
+        <TerritoryWarsView
+          territories={territories}
+          venues={venues}
+          firms={firms}
+          playerFirm={playerFirm}
+          lads={lads}
+          policeHeat={policeHeat}
+          respect={respect}
+          treasury={treasury}
+          activeCampaign={activeCampaign}
+          onDeclareWar={onDeclareWar}
+          onResolveDayBattle={onResolveDayBattle}
+          onAbandonCampaign={onAbandonCampaign}
+        />
+      ) : (
+        <div className="space-y-5">
       {/* Top Banner: City Skyline & Prosperity Progress */}
       <div className="relative rounded-lg overflow-hidden border border-[#2b3e54] bg-[#0c131c] shadow-xl">
         {/* Gritty retro city pixel illustration background */}
@@ -477,6 +598,8 @@ export const CityView: React.FC<CityViewProps> = ({
           )}
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };

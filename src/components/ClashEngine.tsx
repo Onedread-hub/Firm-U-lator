@@ -11,8 +11,10 @@ interface ClashEngineProps {
   tactics: Tactics;
   awayPlan: AwayTravelPlan;
   lads: Lad[];
+  treasury?: number;
   onCompleteClash: (outcome: ClashOutcome) => void;
   onCancel: () => void;
+  onPoliceRaid?: (treasuryLoss: number) => void;
 }
 
 interface FighterToken {
@@ -36,8 +38,10 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
   tactics,
   awayPlan,
   lads,
+  treasury,
   onCompleteClash,
-  onCancel
+  onCancel,
+  onPoliceRaid
 }) => {
   const [minute, setMinute] = useState<number>(0);
   const [isRunning, setIsRunning] = useState<boolean>(true);
@@ -57,10 +61,51 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
   // Fighter Tokens
   const [tokens, setTokens] = useState<FighterToken[]>([]);
   const [displayMode, setDisplayMode] = useState<'ascii_3d' | 'tactical_2d'>('ascii_3d');
+  const [isPoliceRaidModalOpen, setIsPoliceRaidModalOpen] = useState<boolean>(false);
 
   const isResolvedRef = useRef<boolean>(false);
 
+  const currentHeat = Math.max(awayPlan.awayCityHeat || 0, awayPlan.cargoManifest?.awayCityHeat || 0);
+
+  const handleConfirmPoliceRaid = () => {
+    isResolvedRef.current = true;
+    setIsRunning(false);
+    const curTreasury = treasury ?? 500;
+    const lostFunds = Math.floor(curTreasury * 0.5);
+    onPoliceRaid?.(lostFunds);
+
+    const raidOutcome: ClashOutcome = {
+      winnerId: 'police_dispersed',
+      playerFirmName: playerFirm.name,
+      rivalFirmName: rivalFirm.name,
+      roundsFought: 0,
+      playerInjuries: [],
+      rivalInjuries: [],
+      arrests: ['3 Lads detained under Section 60 stop & search'],
+      respectDelta: -25,
+      loyaltyDelta: -10,
+      treasuryDelta: -lostFunds,
+      headline: `POLICE RAID: MASS TACTICAL SWEEP CANCELS CLASH IN ${fixture.location.toUpperCase()}`,
+      matchNarrative: [
+        `0' Black market contraband heat breached critical threshold (${currentHeat}/100).`,
+        `0' Metropolitan Police Tactical Support Units executed an emergency borough lock-down.`,
+        `0' Matchday street clash CANCELLED. 50% firm treasury confiscated under Proceeds of Crime Act (£${lostFunds}).`
+      ],
+      newspaperQuote: `"Operation Tactical Sweep locked down three high street blocks. Multiple illegal contraband crates and £${lostFunds} liquid cash seized."`
+    };
+
+    setIsPoliceRaidModalOpen(false);
+    onCompleteClash(raidOutcome);
+  };
+
   useEffect(() => {
+    if (currentHeat > 50) {
+      sound.playSiren();
+      setIsRunning(false);
+      setIsPoliceRaidModalOpen(true);
+      return;
+    }
+
     sound.playCheer();
     const initialTokens: FighterToken[] = [];
     const selectedLads = lads.filter(l => tactics.selectedLadIds.includes(l.id)).slice(0, 8);
@@ -483,6 +528,7 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
               smokeActive={smokeActive}
               policeDistance={policeDistance}
               minute={minute}
+              tokens={tokens}
             />
           ) : (
             <div className="fm-panel rounded-lg overflow-hidden">
@@ -636,6 +682,71 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Police Raid Emergency Modal (>50 Heat Trigger) */}
+      {isPoliceRaidModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs font-mono">
+          <div className="w-full max-w-lg bg-[#0e1118] border-2 border-rose-600 rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-950 p-4 border-b border-rose-700 flex items-center gap-3">
+              <Siren className="w-6 h-6 text-rose-400 animate-pulse" />
+              <div>
+                <div className="text-[10px] text-rose-300 font-bold uppercase tracking-widest">
+                  CRITICAL INCIDENT · OPERATION TACTICAL SWEEP
+                </div>
+                <h3 className="text-base font-bold text-white font-sans">
+                  POLICE RAID: MATCHDAY CLASH CANCELLED
+                </h3>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 space-y-3 text-xs bg-[#090c12]">
+              <div className="bg-rose-950/40 border border-rose-800/80 p-3 rounded text-rose-200 leading-relaxed space-y-2">
+                <p>
+                  <strong>Metropolitan Police Tactical Support &amp; Dog Units</strong> have executed a pre-match raid across the borough following excessive black market trading.
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  Away City Contraband Heat reached <strong className="text-rose-400 font-bold">{currentHeat}/100</strong> (Threshold: &gt;50). Plain-clothes spotters tracked the bootleg shipments directly to the terrace assembly point.
+                </p>
+              </div>
+
+              <div className="bg-[#121822] p-3 rounded border border-[#212f42] text-[11px] space-y-1.5">
+                <div className="text-amber-400 font-bold uppercase text-[10px]">Financial &amp; Legal Penalties:</div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Matchday Clash:</span>
+                  <span className="font-bold text-rose-400">CANCELLED (Tactical Dispersal)</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Proceeds of Crime Act Seizure:</span>
+                  <span className="font-bold text-rose-400">
+                    -£{Math.floor((treasury ?? 500) * 0.5)} (50% Liquid Treasury)
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Terrace Respect Penalty:</span>
+                  <span className="font-bold text-amber-400">-25 Respect</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Firm Morale &amp; Loyalty:</span>
+                  <span className="font-bold text-amber-400">-10% Loyalty</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action */}
+            <div className="p-3 bg-[#0a0d14] border-t border-rose-900/60 flex justify-end">
+              <button
+                type="button"
+                onClick={handleConfirmPoliceRaid}
+                className="px-4 py-2 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs rounded transition-all shadow flex items-center gap-1.5"
+              >
+                <span>Scatter Lads &amp; Accept Losses</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

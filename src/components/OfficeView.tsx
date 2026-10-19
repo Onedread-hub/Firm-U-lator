@@ -1,6 +1,6 @@
 import React from 'react';
 import { Firm, Fixture, Lad, TerraceNews } from '../types/game';
-import { Shield, Users, MapPin, Swords, Clock, AlertTriangle, Radio, Navigation, CheckCircle2, ChevronRight, PhoneCall } from 'lucide-react';
+import { Shield, Users, MapPin, Swords, Clock, AlertTriangle, Radio, Navigation, CheckCircle2, ChevronRight, PhoneCall, Trophy, Sparkles } from 'lucide-react';
 import { ActiveTab } from './Navbar';
 
 interface OfficeViewProps {
@@ -16,6 +16,7 @@ interface OfficeViewProps {
   onOpenClash: () => void;
   onOpenClubModal?: () => void;
   onTriggerPhoneCall?: () => void;
+  onStartNextSeason?: () => void;
 }
 
 export const OfficeView: React.FC<OfficeViewProps> = ({
@@ -29,7 +30,8 @@ export const OfficeView: React.FC<OfficeViewProps> = ({
   setActiveTab,
   onOpenClash,
   onOpenClubModal,
-  onTriggerPhoneCall
+  onTriggerPhoneCall,
+  onStartNextSeason
 }) => {
   const activeLadsCount = lads.filter(l => l.status === 'active').length;
   const injuredLadsCount = lads.filter(l => l.status === 'injured' || l.status === 'hospitalised').length;
@@ -196,8 +198,37 @@ export const OfficeView: React.FC<OfficeViewProps> = ({
                 </div>
               </>
             ) : (
-              <div className="text-center py-10 text-slate-500 font-mono text-xs">
-                All scheduled season fixtures completed!
+              <div className="text-center py-8 px-4 bg-[#0c141e] rounded-lg border border-[#203247] space-y-3 font-mono">
+                <div className="inline-flex p-3 bg-amber-950/60 rounded-full border border-amber-600 text-amber-400">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-bold uppercase tracking-wide text-white">
+                    Season Campaign Concluded!
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    All scheduled matchday clashes for the current season have been resolved.
+                    Review the final league standings, manage your nightlife doors and territories, or kick off the next season campaign.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => setActiveTab('league')}
+                    className="px-4 py-2 bg-[#1a293b] hover:bg-[#253d58] text-slate-200 border border-[#304a69] rounded font-bold text-xs transition-all"
+                  >
+                    View Final Standings
+                  </button>
+                  {onStartNextSeason && (
+                    <button
+                      onClick={onStartNextSeason}
+                      className="fm-continue-btn px-5 py-2 text-xs font-extrabold uppercase tracking-wider rounded transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Kick Off Next Season (New 10-Match Calendar) &gt;&gt;</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

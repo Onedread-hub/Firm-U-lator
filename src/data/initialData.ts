@@ -1,4 +1,5 @@
 import { Firm, Lad, Fixture, TerritoryLocation, TerraceNews, Tactics, AwayTravelPlan } from '../types/game';
+import { createDefaultCargoManifest } from './tradingData';
 
 // The 26 authentic clubs from SFS v0.1 across Big Time League & Up and Comers
 export const INITIAL_FIRMS: Firm[] = [
@@ -719,75 +720,51 @@ export const INITIAL_LADS: Lad[] = [
   }
 ];
 
-// Fixtures matching the SFS v0.1 club universe
-export const INITIAL_FIXTURES: Fixture[] = [
-  {
-    id: 'fix_1',
-    round: 1,
-    homeFirmId: 'firm_northwood',
-    awayFirmId: 'firm_kingsbridge',
-    venueName: 'Northwood High St & Station Approach',
-    location: 'Northwood (Northern)',
-    footballFixture: 'Northwood United vs Kingsbridge Ath.',
-    clashPlayed: false,
-    isDerby: false
-  },
-  {
-    id: 'fix_2',
-    round: 2,
-    homeFirmId: 'firm_westport',
-    awayFirmId: 'firm_northwood',
-    venueName: 'Quayside Pier & Dock Concourse',
-    location: 'Westport (Coastal)',
-    footballFixture: 'Westport City vs Northwood United',
-    clashPlayed: false,
-    isDerby: false
-  },
-  {
-    id: 'fix_3',
-    round: 3,
-    homeFirmId: 'firm_northwood',
-    awayFirmId: 'firm_redcliffe',
-    venueName: 'Colliery Lane & Station Viaduct',
-    location: 'Northwood (Northern)',
-    footballFixture: 'Northwood United vs Redcliffe Albion',
-    clashPlayed: false,
-    isDerby: true
-  },
-  {
-    id: 'fix_4',
-    round: 4,
-    homeFirmId: 'firm_riverside',
-    awayFirmId: 'firm_northwood',
-    venueName: 'Waterfront Esplanade & Bridge Approach',
-    location: 'Riverside (Southern)',
-    footballFixture: 'Riverside FC vs Northwood United',
-    clashPlayed: false,
-    isDerby: false
-  },
-  {
-    id: 'fix_5',
-    round: 5,
-    homeFirmId: 'firm_northwood',
-    awayFirmId: 'firm_stonebridge',
-    venueName: 'Iron Works Way & Pavement Chokepoint',
-    location: 'Northwood (Northern)',
-    footballFixture: 'Northwood United vs Stonebridge Park',
-    clashPlayed: false,
-    isDerby: false
-  },
-  {
-    id: 'fix_6',
-    round: 6,
-    homeFirmId: 'firm_millwall_cross',
-    awayFirmId: 'firm_northwood',
-    venueName: 'Cold Blow Lane & Station Vaults',
-    location: 'Millwall Cross (Southern)',
-    footballFixture: 'Millwall Cross vs Northwood United',
-    clashPlayed: false,
-    isDerby: true
-  }
-];
+// Dynamic Fixture Generator for SFS 26 Clubs Season Calendar
+export function generateSeasonFixtures(
+  playerFirmId: string,
+  firmsList: Firm[] = INITIAL_FIRMS,
+  seasonNumber: number = 1
+): Fixture[] {
+  const player = firmsList.find(f => f.id === playerFirmId) || firmsList[0];
+  const rivals = firmsList.filter(f => f.id !== player.id);
+
+  // Prioritize rivals: regional derbies first, then same league tier, then others
+  const sortedRivals = [...rivals].sort((a, b) => {
+    const aSameRegion = a.region === player.region ? 2 : 0;
+    const bSameRegion = b.region === player.region ? 2 : 0;
+    const aSameTier = a.leagueTier === player.leagueTier ? 1 : 0;
+    const bSameTier = b.leagueTier === player.leagueTier ? 1 : 0;
+    return (bSameRegion + bSameTier) - (aSameRegion + aSameTier);
+  });
+
+  const selectedRivals = sortedRivals.slice(0, 10);
+
+  return selectedRivals.map((rival, index) => {
+    const round = index + 1;
+    // Alternate Home and Away
+    const isHome = round % 2 === 1;
+    const home = isHome ? player : rival;
+    const away = isHome ? rival : player;
+    const isDerby = home.region === away.region || (home.id.includes('millwall') && away.id.includes('northwood'));
+
+    return {
+      id: `fix_s${seasonNumber}_${round}`,
+      round,
+      homeFirmId: home.id,
+      awayFirmId: away.id,
+      venueName: isHome
+        ? `${player.city} High St & Station Concourse`
+        : `${rival.city} Station Approach & ${rival.stadium}`,
+      location: isHome ? `${player.city} (${player.region})` : `${rival.city} (${rival.region})`,
+      footballFixture: `${home.footballClub} vs ${away.footballClub}`,
+      clashPlayed: false,
+      isDerby
+    };
+  });
+}
+
+export const INITIAL_FIXTURES: Fixture[] = generateSeasonFixtures('firm_northwood', INITIAL_FIRMS, 1);
 
 export const INITIAL_TERRITORIES: TerritoryLocation[] = [
   {
@@ -887,5 +864,7 @@ export const DEFAULT_AWAY_PLAN: AwayTravelPlan = {
   totalCost: 320,
   stealthBonus: 50,
   loyaltyImpact: 12,
-  policeHeatRisk: 25
+  policeHeatRisk: 25,
+  cargoManifest: createDefaultCargoManifest(),
+  awayCityHeat: 0
 };
