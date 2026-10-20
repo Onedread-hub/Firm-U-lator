@@ -37,7 +37,7 @@ export interface ClashLadInput {
   maxHp: number;
   bottle: number;
   isPanicking: boolean;
-  action?: 'idle' | 'guard' | 'punch' | 'run' | 'knocked_down';
+  action?: 'idle' | 'guard' | 'punch' | 'kick' | 'run' | 'knocked_down';
 }
 
 export interface ClashSceneState {
@@ -110,9 +110,10 @@ export function computeSkeletalPose(lad: ClashLadInput, frameIndex: number = 0):
   // Melee clash zone (near centre Z ~ 0)
   const zPos = ((lad.yPercent - 50) / 50) * 10.0;
   if (Math.abs(zPos) < 2.5) {
-    const isPunching = ((frameIndex + Math.abs(Math.floor(lad.xPercent))) % 16) < 6;
+    const actionRoll = (frameIndex + Math.abs(Math.floor(lad.xPercent))) % 18;
+    const stance = actionRoll < 5 ? 'punch' : actionRoll < 10 ? 'kick' : 'guard';
     return {
-      stance: isPunching ? 'punch' : 'guard',
+      stance,
       actionFrame: frameIndex % 4,
       facingAngle: lad.isPlayer ? 0 : Math.PI
     };

@@ -29,6 +29,7 @@ import {
   Zap,
   Play
 } from 'lucide-react';
+import { FirmMemberSprite } from './FirmMemberSprite';
 
 interface DoorSecurityViewProps {
   venues: Venue[];
@@ -325,20 +326,32 @@ export const DoorSecurityView: React.FC<DoorSecurityViewProps> = ({
                       assignedLadsForSelectedVenue.map(lad => (
                         <div
                           key={lad.id}
-                          className="bg-[#0f1724] border border-[#21354d] rounded p-3 flex items-center justify-between"
+                          className="bg-[#0f1724] border border-[#21354d] rounded p-3 flex items-center justify-between gap-3 shadow-sm"
                         >
-                          <div>
-                            <div className="font-bold text-sm text-white">
-                              {lad.name}{' '}
-                              <span className="text-[11px] text-amber-400 font-mono">("{lad.nickname}")</span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-11 shrink-0 flex items-center justify-center bg-black/40 rounded p-1 border border-white/10">
+                              <FirmMemberSprite
+                                motion="idle"
+                                facing="right"
+                                role={lad.role}
+                                jacketColor="#1e3a8a"
+                                size={36}
+                                showShadow={false}
+                              />
                             </div>
-                            <div className="text-[10px] text-slate-400 font-mono capitalize">
-                              Role: {lad.role} · Wage: £150/wk
-                            </div>
-                            <div className="flex items-center gap-3 text-[11px] font-mono mt-1">
-                              <span className="text-emerald-400">STR: {lad.hardness}</span>
-                              <span className="text-amber-400">Bottle: {lad.bottle}</span>
-                              <span className="text-slate-300">HP: {lad.health}%</span>
+                            <div>
+                              <div className="font-bold text-sm text-white">
+                                {lad.name}{' '}
+                                <span className="text-[11px] text-amber-400 font-mono">("{lad.nickname}")</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono capitalize">
+                                Role: {lad.role} · Wage: £150/wk
+                              </div>
+                              <div className="flex items-center gap-3 text-[11px] font-mono mt-1">
+                                <span className="text-emerald-400">STR: {lad.hardness}</span>
+                                <span className="text-amber-400">Bottle: {lad.bottle}</span>
+                                <span className="text-slate-300">HP: {lad.health}%</span>
+                              </div>
                             </div>
                           </div>
 

@@ -29,6 +29,7 @@ interface FighterToken {
   maxHp: number;
   bottle: number;
   isPanicking: boolean;
+  motion?: string;
 }
 
 interface AsciiClashViewportProps {
@@ -117,7 +118,8 @@ export const AsciiClashViewport: React.FC<AsciiClashViewportProps> = ({
           hp: tok.hp,
           maxHp: tok.maxHp,
           bottle: tok.bottle,
-          isPanicking: tok.isPanicking
+          isPanicking: tok.isPanicking,
+          action: tok.motion === 'kicking' ? 'kick' : tok.motion === 'punching' ? 'punch' : tok.motion === 'running' ? 'run' : tok.motion === 'knocked_down' ? 'knocked_down' : 'idle'
         }));
       } else {
         // Fallback initial squad placement if tokens haven't spawned yet

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Lad, LadRole, LadStatus } from '../types/game';
-import { Shield, Dumbbell, Zap, HeartPulse, Scale, Award, Sparkles, Activity, FileText } from 'lucide-react';
+import { Shield, Dumbbell, Zap, HeartPulse, Scale, Award, Sparkles, Activity, FileText, Swords } from 'lucide-react';
 import { sound } from '../services/sound';
+import { FirmMemberSprite, SpriteMotion, SpriteFacing } from './FirmMemberSprite';
 
 interface SquadViewProps {
   lads: Lad[];
@@ -19,6 +20,8 @@ export const SquadView: React.FC<SquadViewProps> = ({
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [selectedLadId, setSelectedLadId] = useState<string>(lads[0]?.id || '');
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [previewMotion, setPreviewMotion] = useState<SpriteMotion>('idle');
+  const [previewFacing, setPreviewFacing] = useState<SpriteFacing>('right');
 
   const selectedLad = lads.find(l => l.id === selectedLadId) || lads[0];
 
@@ -220,13 +223,27 @@ export const SquadView: React.FC<SquadViewProps> = ({
                       }`}
                     >
                       <td className="py-2.5 px-3 text-slate-400 font-bold">{index + 1}</td>
-                      <td className="py-2.5 px-3">
-                        <div className="font-bold text-slate-100 flex items-center gap-1.5">
-                          <span>{lad.name}</span>
-                          <span className="text-amber-400 text-[11px] font-normal">"{lad.nickname}"</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 capitalize">
-                          {lad.role.replace('_', ' ')} · {lad.status.toUpperCase()}
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-8 shrink-0 flex items-center justify-center overflow-hidden">
+                            <FirmMemberSprite
+                              motion="idle"
+                              facing="right"
+                              role={lad.role}
+                              jacketColor="#1e3a8a"
+                              size={28}
+                              showShadow={false}
+                            />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-100 flex items-center gap-1.5">
+                              <span>{lad.name}</span>
+                              <span className="text-amber-400 text-[11px] font-normal">"{lad.nickname}"</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 capitalize">
+                              {lad.role.replace('_', ' ')} · {lad.status.toUpperCase()}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className={`py-2.5 px-2 text-center tabular-nums ${getStatClass(lad.hardness)}`}>
@@ -288,6 +305,124 @@ export const SquadView: React.FC<SquadViewProps> = ({
                   Make Top Boy
                 </button>
               )}
+            </div>
+
+            {/* Interactive Animated Casual Fighter Sprite Stage */}
+            <div className="px-4 pt-3 pb-1">
+              <div className="bg-[#0b121b] border border-[#1e2f42] rounded-lg p-3 flex flex-col items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center justify-between w-full text-[10px] font-mono text-[#8fa6be] border-b border-[#1b2b3d] pb-1.5">
+                  <span className="font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                    <Swords className="w-3 h-3 text-amber-400" />
+                    <span>Casual Combat Sprite</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewFacing(p => p === 'left' ? 'right' : 'left')}
+                      className="px-1.5 py-0.5 rounded bg-[#162334] text-slate-300 hover:text-white border border-[#263c54] text-[9px] cursor-pointer"
+                      title="Flip facing direction"
+                    >
+                      Facing: {previewFacing.toUpperCase()}
+                    </button>
+                    <span className="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800">
+                      Stone Island Kit
+                    </span>
+                  </div>
+                </div>
+
+                {/* Animated Sprite Center Stage */}
+                <div className="relative w-full h-24 bg-gradient-to-b from-[#0a1017] to-[#121c28] rounded flex items-center justify-center overflow-hidden border border-[#182636]">
+                  {/* Pavement ground line */}
+                  <div className="absolute inset-x-0 bottom-3 border-b border-white/10" />
+                  <FirmMemberSprite
+                    motion={previewMotion}
+                    facing={previewFacing}
+                    role={selectedLad.role}
+                    jacketColor="#1e3a8a"
+                    size={64}
+                    showShadow={true}
+                    showHitEffect={previewMotion === 'punching' || previewMotion === 'kicking'}
+                  />
+                </div>
+
+                {/* Interactive Motion Action Triggers */}
+                <div className="flex items-center justify-center gap-1.5 w-full flex-wrap font-mono">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setPreviewMotion('idle');
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded font-bold transition-all cursor-pointer ${
+                      previewMotion === 'idle'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'bg-[#152130] text-slate-300 hover:text-white border border-[#233549]'
+                    }`}
+                  >
+                    🥊 Guard
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playPunch();
+                      setPreviewMotion('punching');
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded font-bold transition-all cursor-pointer ${
+                      previewMotion === 'punching'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'bg-[#152130] text-slate-300 hover:text-white border border-[#233549]'
+                    }`}
+                  >
+                    💥 Punch
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playHit();
+                      setPreviewMotion('kicking');
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded font-bold transition-all cursor-pointer ${
+                      previewMotion === 'kicking'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'bg-[#152130] text-slate-300 hover:text-white border border-[#233549]'
+                    }`}
+                  >
+                    👟 Kick
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setPreviewMotion('running');
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded font-bold transition-all cursor-pointer ${
+                      previewMotion === 'running'
+                        ? 'bg-amber-400 text-black shadow'
+                        : 'bg-[#152130] text-slate-300 hover:text-white border border-[#233549]'
+                    }`}
+                  >
+                    🏃 Run
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playPunch();
+                      setPreviewMotion('knocked_down');
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded font-bold transition-all cursor-pointer ${
+                      previewMotion === 'knocked_down'
+                        ? 'bg-rose-500 text-white shadow'
+                        : 'bg-[#152130] text-slate-300 hover:text-white border border-[#233549]'
+                    }`}
+                  >
+                    💫 Down
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* FM 2010 Colored Attributes Grid */}

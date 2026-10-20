@@ -2,6 +2,7 @@ import React from 'react';
 import { Lad, Tactics, FormationType, WeaponDoctrine, LineDepth } from '../types/game';
 import { sound } from '../services/sound';
 import { Shield, Flame, Crosshair, Users, Info } from 'lucide-react';
+import { FirmMemberSprite } from './FirmMemberSprite';
 
 interface TacticsViewProps {
   tactics: Tactics;
@@ -199,12 +200,23 @@ export const TacticsView: React.FC<TacticsViewProps> = ({
                       className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group cursor-pointer z-20"
                       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                     >
-                      {/* FM Disc */}
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-b from-amber-300 to-amber-500 border-2 border-black/80 shadow-md flex items-center justify-center text-black font-black text-xs group-hover:scale-110 transition-transform">
-                        {idx + 1}
+                      {/* Animated Sprite in Formation */}
+                      <div className="relative group-hover:scale-110 transition-transform flex flex-col items-center">
+                        <FirmMemberSprite
+                          motion="idle"
+                          facing={pos.x < 50 ? 'right' : 'left'}
+                          role={assignedLad?.role || 'minder'}
+                          jacketColor="#1e3a8a"
+                          size={36}
+                          showShadow={true}
+                        />
+                        {/* Number badge */}
+                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-black font-black text-[9px] flex items-center justify-center border border-black shadow">
+                          {idx + 1}
+                        </div>
                       </div>
                       {/* Name Tag */}
-                      <div className="mt-1 px-1.5 py-0.5 rounded bg-black/80 border border-white/20 text-[10px] font-mono text-white whitespace-nowrap shadow drop-shadow-sm">
+                      <div className="mt-0.5 px-1.5 py-0.5 rounded bg-black/85 border border-white/20 text-[9px] font-mono text-white whitespace-nowrap shadow drop-shadow-sm">
                         {assignedLad ? `${assignedLad.name.split(' ')[0]} ("${assignedLad.nickname}")` : pos.role}
                       </div>
                     </div>

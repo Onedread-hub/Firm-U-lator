@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Firm, Fixture, Lad, Tactics, AwayTravelPlan, ClashOutcome } from '../types/game';
 import { sound } from '../services/sound';
-import { Shield, Flame, Crosshair, Play, FastForward, Siren, Activity, BarChart2, Terminal, Layers } from 'lucide-react';
+import { Shield, Flame, Crosshair, Play, FastForward, Siren, Activity, BarChart2, Terminal, Layers, Eye, Sparkles } from 'lucide-react';
 import { AsciiClashViewport } from './AsciiClashViewport';
+import { FirmMemberSprite, SpriteMotion, SpriteFacing } from './FirmMemberSprite';
+import { SpriteMotionShowcaseModal } from './SpriteMotionShowcaseModal';
 
 interface ClashEngineProps {
   playerFirm: Firm;
@@ -17,7 +19,7 @@ interface ClashEngineProps {
   onPoliceRaid?: (treasuryLoss: number) => void;
 }
 
-interface FighterToken {
+export interface FighterToken {
   id: string;
   name: string;
   isPlayer: boolean;
@@ -29,6 +31,9 @@ interface FighterToken {
   maxHp: number;
   bottle: number;
   isPanicking: boolean;
+  motion?: SpriteMotion;
+  facing?: SpriteFacing;
+  hitSpark?: boolean;
 }
 
 export const ClashEngine: React.FC<ClashEngineProps> = ({
@@ -60,8 +65,9 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
 
   // Fighter Tokens
   const [tokens, setTokens] = useState<FighterToken[]>([]);
-  const [displayMode, setDisplayMode] = useState<'ascii_3d' | 'tactical_2d'>('ascii_3d');
+  const [displayMode, setDisplayMode] = useState<'ascii_3d' | 'tactical_2d'>('tactical_2d');
   const [isPoliceRaidModalOpen, setIsPoliceRaidModalOpen] = useState<boolean>(false);
+  const [isSpriteModalOpen, setIsSpriteModalOpen] = useState<boolean>(false);
 
   const isResolvedRef = useRef<boolean>(false);
 
@@ -122,7 +128,9 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
         hp: lad.health,
         maxHp: lad.maxHealth,
         bottle: lad.bottle,
-        isPanicking: false
+        isPanicking: false,
+        motion: 'idle',
+        facing: 'right'
       });
     });
 
@@ -138,7 +146,9 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
         hp: 100,
         maxHp: 100,
         bottle: rivalFirm.tacticsProfile.baseBottle,
-        isPanicking: false
+        isPanicking: false,
+        motion: 'idle',
+        facing: 'left'
       });
     }
 
@@ -213,8 +223,10 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
       return;
     }
 
-    // Token movement on 2D pitch
+    // Token movement & dynamic animated sprite motions
     setTokens(prevTokens => {
+      const opponentsOf = (isPlayer: boolean) => prevTokens.filter(t => t.isPlayer !== isPlayer);
+
       return prevTokens.map(tok => {
         let jitterX = (Math.random() - 0.5) * 4;
         let jitterY = (Math.random() - 0.5) * 3;
@@ -225,10 +237,55 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
           jitterY += 0.6;
         }
 
+        const nextX = Math.max(10, Math.min(90, tok.x + jitterX));
+        const nextY = Math.max(15, Math.min(85, tok.y + jitterY));
+
+        // Find nearest opponent to face and engage
+        const opponents = opponentsOf(tok.isPlayer);
+        let nearestDist = Infinity;
+        let nearestOpp: FighterToken | null = null;
+        for (const opp of opponents) {
+          const dist = Math.hypot(opp.x - tok.x, opp.y - tok.y);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestOpp = opp;
+          }
+        }
+
+        // Determine facing direction
+        let facing: SpriteFacing = tok.isPlayer ? 'right' : 'left';
+        if (nearestOpp) {
+          facing = nearestOpp.x >= tok.x ? 'right' : 'left';
+        }
+
+        // Determine dynamic sprite motion
+        let motion: SpriteMotion = 'idle';
+        if (tok.hp <= 20) {
+          motion = 'knocked_down';
+        } else if (tok.isPanicking) {
+          motion = 'running';
+          facing = tok.isPlayer ? 'left' : 'right'; // Fleeing towards baseline
+        } else if (nearestDist < 22) {
+          // In close-quarters melee brawl: alternate between punching and kicking!
+          const combatRoll = (currentMin * 11 + Math.floor(tok.x * 3) + Math.floor(tok.y * 5)) % 10;
+          if (combatRoll < 4) {
+            motion = 'punching'; // Devastating right cross
+          } else if (combatRoll < 7) {
+            motion = 'kicking'; // High terrace boot strike
+          } else {
+            motion = 'idle'; // Guarding stance
+          }
+        } else if (Math.abs(jitterX) > 0.6 || Math.abs(jitterY) > 0.4) {
+          motion = 'running'; // Forward sprint
+        }
+
         return {
           ...tok,
-          x: Math.max(10, Math.min(90, tok.x + jitterX)),
-          y: Math.max(15, Math.min(85, tok.y + jitterY))
+          x: nextX,
+          y: nextY,
+          facing,
+          motion,
+          hitSpark: motion === 'punching' || motion === 'kicking'
         };
       });
     });
@@ -490,7 +547,17 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
               <Terminal className="w-3.5 h-3.5 text-amber-400" />
               <span>MELEE MATCH VIEWPORT</span>
             </span>
-            <div className="flex items-center gap-1 bg-[#0b121b] p-0.5 rounded border border-[#233549]">
+            <div className="flex items-center gap-1.5 bg-[#0b121b] p-0.5 rounded border border-[#233549]">
+              <button
+                type="button"
+                onClick={() => setIsSpriteModalOpen(true)}
+                className="px-2.5 py-1 text-[10px] rounded font-bold flex items-center gap-1 bg-[#162536] hover:bg-[#20364d] text-amber-300 border border-[#2c4564] transition-all cursor-pointer"
+                title="Open Firm Member Sprite Motion Lab"
+              >
+                <Eye className="w-3 h-3 text-amber-400" />
+                <span>Sprite Studio</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setDisplayMode('ascii_3d')}
@@ -513,7 +580,7 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
                 }`}
               >
                 <Layers className="w-3 h-3" />
-                <span>2D Tactical Pitch</span>
+                <span>2D Sprites Pitch</span>
               </button>
             </div>
           </div>
@@ -546,27 +613,64 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
                   </div>
                 )}
 
-                {/* Tokens */}
-                {tokens.map(tok => (
-                  <div
-                    key={tok.id}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 z-20"
-                    style={{ left: `${tok.x}%`, top: `${tok.y}%` }}
-                  >
+                {/* Animated Firm Member Sprites */}
+                {tokens.map(tok => {
+                  const isPunching = tok.motion === 'punching';
+                  const isKicking = tok.motion === 'kicking';
+                  const isKnockedDown = tok.motion === 'knocked_down';
+
+                  return (
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] shadow-lg border-2 ${
-                        tok.isPlayer
-                          ? 'bg-amber-400 text-black border-black'
-                          : 'bg-rose-600 text-white border-black'
-                      }`}
+                      key={tok.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 z-20 group"
+                      style={{ left: `${tok.x}%`, top: `${tok.y}%` }}
                     >
-                      {tok.name.charAt(0)}
+                      {/* Dynamic Action Floating Badge */}
+                      {isPunching && (
+                        <span className="text-[8px] font-black uppercase tracking-wider text-amber-300 bg-black/90 px-1 py-0.2 rounded border border-amber-500 animate-bounce mb-0.5 whitespace-nowrap shadow-md">
+                          💥 PUNCH!
+                        </span>
+                      )}
+                      {isKicking && (
+                        <span className="text-[8px] font-black uppercase tracking-wider text-sky-300 bg-black/90 px-1 py-0.2 rounded border border-sky-400 animate-bounce mb-0.5 whitespace-nowrap shadow-md">
+                          👟 KICK!
+                        </span>
+                      )}
+                      {isKnockedDown && (
+                        <span className="text-[8px] font-black uppercase tracking-wider text-rose-300 bg-black/90 px-1 py-0.2 rounded border border-rose-500 mb-0.5 whitespace-nowrap">
+                          💫 DOWN
+                        </span>
+                      )}
+
+                      {/* Animated Pixel-Art Casual Fighter Sprite */}
+                      <FirmMemberSprite
+                        motion={tok.motion || 'idle'}
+                        facing={tok.facing || (tok.isPlayer ? 'right' : 'left')}
+                        role={tok.role}
+                        jacketColor={tok.isPlayer ? (playerFirm.primaryColor || '#1e3a8a') : (rivalFirm.primaryColor || '#991b1b')}
+                        isPlayer={tok.isPlayer}
+                        size={46}
+                        showShadow={true}
+                        showHitEffect={tok.hitSpark}
+                      />
+
+                      {/* Mini Health Bar */}
+                      <div className="w-8 bg-black/80 rounded-full h-1 overflow-hidden border border-white/20 mt-0.5">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            tok.isPlayer ? 'bg-amber-400' : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${Math.max(0, Math.min(100, (tok.hp / tok.maxHp) * 100))}%` }}
+                        />
+                      </div>
+
+                      {/* Name Tag */}
+                      <div className="text-[9px] mt-0.5 px-1 rounded bg-black/85 text-white whitespace-nowrap border border-white/20 font-mono">
+                        {tok.name}
+                      </div>
                     </div>
-                    <div className="text-[9px] mt-0.5 px-1 rounded bg-black/80 text-white whitespace-nowrap border border-white/20">
-                      {tok.name}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Active Shout Notification */}
                 {activeShout && (
@@ -746,6 +850,15 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Firm Member Animated Sprite Motion Lab / Showcase Modal */}
+      {isSpriteModalOpen && (
+        <SpriteMotionShowcaseModal
+          playerFirm={playerFirm}
+          rivalFirm={rivalFirm}
+          onClose={() => setIsSpriteModalOpen(false)}
+        />
       )}
     </div>
   );

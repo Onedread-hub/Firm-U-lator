@@ -35,7 +35,7 @@ export interface AsciiCell {
 export type GroundTexture = 'pitch' | 'cobblestone' | 'railway_station' | 'pub_carpet';
 
 export interface SkeletalPose {
-  stance: 'idle' | 'guard' | 'punch' | 'run' | 'knocked_down';
+  stance: 'idle' | 'guard' | 'punch' | 'kick' | 'run' | 'knocked_down';
   actionFrame?: number;
   facingAngle?: number; // Radians, 0 = towards +Z
 }
@@ -508,8 +508,8 @@ export function drawSkeletalFigure(
     blitter.setCell(screenX, screenY - 4, '@', fig.style.headColor, '#000000', depth - 0.2);
 
     // 2. Torso with Stone Island / Tracktop jacket
-    const leftArm = pose === 'punch' ? '━' : pose === 'guard' ? '╱' : '│';
-    const rightArm = pose === 'punch' ? '►' : pose === 'guard' ? '╲' : '│';
+    const leftArm = pose === 'kick' ? '╲' : pose === 'punch' ? '━' : pose === 'guard' ? '╱' : '│';
+    const rightArm = pose === 'kick' ? '╱' : pose === 'punch' ? '►' : pose === 'guard' ? '╲' : '│';
     blitter.setCell(screenX - 1, screenY - 3, leftArm, '#94a3b8', '#000000', depth - 0.1);
     blitter.setCell(screenX, screenY - 3, '█', fig.style.jacketColor, '#000000', depth - 0.1);
     blitter.setCell(screenX + 1, screenY - 3, rightArm, '#94a3b8', '#000000', depth - 0.1);
@@ -522,14 +522,14 @@ export function drawSkeletalFigure(
     blitter.setCell(screenX, screenY - 2, '█', fig.style.jacketColor, '#000000', depth - 0.1);
 
     // 3. Legs (Dark denim / cords)
-    const legLeft = pose === 'run' ? '╱' : pose === 'knocked_down' ? '—' : '│';
-    const legRight = pose === 'run' ? '╲' : pose === 'knocked_down' ? '—' : '│';
+    const legLeft = pose === 'kick' ? '│' : pose === 'run' ? '╱' : pose === 'knocked_down' ? '—' : '│';
+    const legRight = pose === 'kick' ? '►' : pose === 'run' ? '╲' : pose === 'knocked_down' ? '—' : '│';
     blitter.setCell(screenX - 1, screenY - 1, legLeft, fig.style.jeansColor, '#000000', depth);
     blitter.setCell(screenX + 1, screenY - 1, legRight, fig.style.jeansColor, '#000000', depth);
 
     // 4. Trainers / Boots
     blitter.setCell(screenX - 1, screenY, '▲', '#f8fafc', '#000000', depth);
-    blitter.setCell(screenX + 1, screenY, '▲', '#f8fafc', '#000000', depth);
+    blitter.setCell(screenX + (pose === 'kick' ? 2 : 1), screenY - (pose === 'kick' ? 1 : 0), '▲', '#f8fafc', '#000000', depth);
 
     // Name tag above head
     if (fig.style.label) {

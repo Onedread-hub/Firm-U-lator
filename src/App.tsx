@@ -180,7 +180,7 @@ export default function App() {
       ? activeFixture.awayFirmId
       : activeFixture.homeFirmId
     : undefined;
-  const rivalFirm = firms.find(f => f.id === rivalFirmId);
+  const rivalFirm = firms.find(f => f.id === rivalFirmId) || (rivalFirmId ? firms.find(f => f.id !== playerFirm.id) : undefined);
 
   const handleToggleMute = () => {
     const muted = sound.toggleMute();
@@ -365,12 +365,12 @@ export default function App() {
 
     // Advance to the round of the next unplayed fixture involving the player's firm
     const nextUnplayed = fixtures.find(
-      f => !f.clashPlayed && f.id !== activeFixture?.id && (f.homeFirmId === playerFirm.id || f.awayFirmId === playerFirm.id)
+      f => !f.clashPlayed && (f.homeFirmId === playerFirm.id || f.awayFirmId === playerFirm.id)
     );
     if (nextUnplayed) {
       setCurrentRound(nextUnplayed.round);
     } else {
-      setCurrentRound(prev => Number(prev) + 1);
+      setCurrentRound(fixtures.length + 1);
     }
 
     setActiveTab('office');
