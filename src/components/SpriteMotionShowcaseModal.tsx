@@ -11,6 +11,7 @@
 import React, { useState } from 'react';
 import { FirmMemberSprite, SpriteMotion, SpriteFacing } from './FirmMemberSprite';
 import { Firm } from '../types/game';
+import { SubcultureType } from '../types/diplomacy';
 import { X, Play, Pause, RotateCcw, Swords, Shield, Activity, User, Eye, Zap } from 'lucide-react';
 
 interface SpriteMotionShowcaseModalProps {
@@ -25,6 +26,7 @@ export const SpriteMotionShowcaseModal: React.FC<SpriteMotionShowcaseModalProps>
   onClose
 }) => {
   const [selectedMotion, setSelectedMotion] = useState<SpriteMotion>('punching');
+  const [selectedSubculture, setSelectedSubculture] = useState<SubcultureType>('rasta');
   const [selectedRole, setSelectedRole] = useState<'top_boy' | 'minder' | 'runner' | 'nutter' | 'face'>('top_boy');
   const [facing, setFacing] = useState<SpriteFacing>('right');
   const [teamSelect, setTeamSelect] = useState<'player' | 'rival'>('player');
@@ -131,6 +133,7 @@ export const SpriteMotionShowcaseModal: React.FC<SpriteMotionShowcaseModalProps>
                   motion={selectedMotion}
                   facing={facing}
                   role={selectedRole}
+                  subculture={selectedSubculture}
                   jacketColor={activeColor}
                   size={spriteSize}
                   frameIndex={isManualFrame ? manualFrameIndex : undefined}
@@ -220,11 +223,42 @@ export const SpriteMotionShowcaseModal: React.FC<SpriteMotionShowcaseModalProps>
             </div>
           </div>
 
-          {/* Right Column: Customization & Firm Selection */}
+          {/* Right Column: Customization & Subculture Selection */}
           <div className="md:col-span-5 space-y-3 flex flex-col justify-between">
+            {/* Highfields Subculture Model Selector */}
+            <div className="p-3 bg-[#0c141e] rounded-lg border border-[#1e2f42] space-y-2 text-xs">
+              <span className="text-[11px] font-bold text-amber-400 uppercase">Highfields Subculture Model:</span>
+              <div className="grid grid-cols-4 gap-1.5 font-mono">
+                {[
+                  { id: 'rasta', icon: '🇯🇲', label: 'Rasta' },
+                  { id: 'punk', icon: '⚡', label: 'Punk' },
+                  { id: 'traveller', icon: '🚐', label: 'Traveller' },
+                  { id: 'hippie', icon: '☮️', label: 'Hippie' },
+                  { id: 'artist', icon: '📻', label: 'Artist' },
+                  { id: 'biker', icon: '🏍️', label: 'Biker' },
+                  { id: 'casual', icon: '👟', label: 'Casual' },
+                  { id: 'police', icon: '🚔', label: 'Police SPG' },
+                ].map(sub => (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => setSelectedSubculture(sub.id as SubcultureType)}
+                    className={`p-1.5 rounded border text-center transition-all cursor-pointer ${
+                      selectedSubculture === sub.id
+                        ? 'bg-amber-400 text-black font-bold border-amber-300 shadow'
+                        : 'bg-[#101824] text-slate-300 border-[#1f3044] hover:bg-[#162334]'
+                    }`}
+                  >
+                    <div className="text-sm">{sub.icon}</div>
+                    <div className="text-[9px] mt-0.5 truncate">{sub.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Team Kit Selector */}
             <div className="p-3 bg-[#0c141e] rounded-lg border border-[#1e2f42] space-y-2 text-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase">Firm Apparel:</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase">Faction Palette:</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setTeamSelect('player')}

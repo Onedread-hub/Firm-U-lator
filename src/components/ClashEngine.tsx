@@ -5,6 +5,7 @@ import { Shield, Flame, Crosshair, Play, FastForward, Siren, Activity, BarChart2
 import { AsciiClashViewport } from './AsciiClashViewport';
 import { FirmMemberSprite, SpriteMotion, SpriteFacing } from './FirmMemberSprite';
 import { SpriteMotionShowcaseModal } from './SpriteMotionShowcaseModal';
+import { SubcultureType } from '../types/diplomacy';
 
 interface ClashEngineProps {
   playerFirm: Firm;
@@ -24,6 +25,7 @@ export interface FighterToken {
   name: string;
   isPlayer: boolean;
   role: string;
+  subculture?: SubcultureType;
   x: number;
   y: number;
   rating: number;
@@ -112,9 +114,21 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
       return;
     }
 
-    sound.playCheer();
-    const initialTokens: FighterToken[] = [];
-    const selectedLads = lads.filter(l => tactics.selectedLadIds.includes(l.id)).slice(0, 8);
+    const resolveSubculture = (id: string, name: string): SubcultureType => {
+      const lower = (id + ' ' + name).toLowerCase();
+      if (lower.includes('police') || lower.includes('spg') || lower.includes('constabulary') || lower.includes('tactical')) return 'police';
+      if (lower.includes('rasta') || lower.includes('dub') || lower.includes('frontline') || lower.includes('reggae')) return 'rasta';
+      if (lower.includes('punk') || lower.includes('squat') || lower.includes('anarch')) return 'punk';
+      if (lower.includes('traveller') || lower.includes('convoy')) return 'traveller';
+      if (lower.includes('hippie') || lower.includes('peace') || lower.includes('spirit')) return 'hippie';
+      if (lower.includes('artist') || lower.includes('radio') || lower.includes('bohemian')) return 'artist';
+      if (lower.includes('biker') || lower.includes('iron') || lower.includes('chopper')) return 'biker';
+      return 'casual';
+    };
+
+    const playerSubculture = resolveSubculture(playerFirm.id, playerFirm.name);
+    const rivalSubculture = resolveSubculture(rivalFirm.id, rivalFirm.name);
+    const isPoliceRival = rivalSubculture === 'police';
 
     selectedLads.forEach((lad, idx) => {
       initialTokens.push({
@@ -122,6 +136,7 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
         name: `${lad.name.split(' ')[0]} ("${lad.nickname}")`,
         isPlayer: true,
         role: lad.role,
+        subculture: playerSubculture,
         x: 30 + (idx % 4) * 14,
         y: 60 + Math.floor(idx / 4) * 16,
         rating: 6.8 + Math.floor(Math.random() * 4) * 0.1,
@@ -135,11 +150,13 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
     });
 
     for (let i = 0; i < 8; i++) {
+      const policeNames = ['SPG Shield Unit', 'Tactical Truncheon', 'Dog Handler Unit', 'SPG Sergeant', 'Snatch Squad', 'Riot Officer', 'Support Vanguard', 'Command Inspector'];
       initialTokens.push({
         id: `rival_${i}`,
-        name: `Rival #${i + 1}`,
+        name: isPoliceRival ? policeNames[i % policeNames.length] : `${rivalFirm.shortName} #${i + 1}`,
         isPlayer: false,
         role: i < 3 ? 'minder' : i < 6 ? 'nutter' : 'runner',
+        subculture: rivalSubculture,
         x: 25 + (i % 4) * 15,
         y: 22 + Math.floor(i / 4) * 14,
         rating: 6.7,
@@ -642,14 +659,15 @@ export const ClashEngine: React.FC<ClashEngineProps> = ({
                         </span>
                       )}
 
-                      {/* Animated Pixel-Art Casual Fighter Sprite */}
+                      {/* Animated Pixel-Art Subculture Fighter Sprite */}
                       <FirmMemberSprite
                         motion={tok.motion || 'idle'}
                         facing={tok.facing || (tok.isPlayer ? 'right' : 'left')}
                         role={tok.role}
+                        subculture={tok.subculture}
                         jacketColor={tok.isPlayer ? (playerFirm.primaryColor || '#1e3a8a') : (rivalFirm.primaryColor || '#991b1b')}
                         isPlayer={tok.isPlayer}
-                        size={46}
+                        size={52}
                         showShadow={true}
                         showHitEffect={tok.hitSpark}
                       />

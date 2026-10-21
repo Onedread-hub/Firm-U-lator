@@ -1,7 +1,19 @@
 import React from 'react';
 import { Volume2, VolumeX, ShieldAlert, ChevronRight, ChevronLeft, Calendar, Shield } from 'lucide-react';
 
-export type ActiveTab = 'office' | 'squad' | 'tactics' | 'away_days' | 'league' | 'pub_hq' | 'city';
+export type ActiveTab =
+  | 'diplomacy_map'
+  | 'diplomacy_desk'
+  | 'timeline'
+  | 'street_clashes'
+  | 'squad'
+  | 'tactics'
+  | 'counter_culture'
+  | 'office'
+  | 'city'
+  | 'away_days'
+  | 'league'
+  | 'pub_hq';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -16,6 +28,8 @@ interface NavbarProps {
   clubName?: string;
   onOpenClubModal?: () => void;
   currentRound?: number;
+  currentYear?: number;
+  currentSeason?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,9 +42,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleMute,
   onStartClash,
   canClash,
-  clubName = 'Northwood United',
+  clubName = 'Frontline Dub Sound',
   onOpenClubModal,
-  currentRound = 1
+  currentRound = 1,
+  currentYear = 1981,
+  currentSeason = 'Summer'
 }) => {
   return (
     <header className="border-b border-[#2d425b] bg-[#0c131c] text-[#d6e2ed] sticky top-0 z-40 select-none shadow-md">
@@ -64,11 +80,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {clubName}
                 </span>
                 <span className="text-[10px] bg-[#1a293b] text-amber-400 border border-[#2d435f] px-1.5 py-0.2 rounded font-mono font-semibold">
-                  Round {currentRound}
+                  {currentSeason} {currentYear}
                 </span>
               </div>
               <div className="text-[11px] text-[#8da3ba] font-mono leading-none">
-                Firm U lator 2010 · SFS Hooligan Sim
+                Highfields (1980–2010) · Subculture Diplomacy Sim
               </div>
             </div>
           </div>
@@ -77,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Center: Current In-Game Calendar Stamp */}
         <div className="hidden md:flex items-center gap-2 text-xs font-mono text-[#8da3ba] bg-[#0c141e] px-3 py-1 rounded border border-[#1e2f42]">
           <Calendar className="w-3.5 h-3.5 text-amber-400" />
-          <span>Saturday 14:45 · Matchday</span>
+          <span>{currentSeason} {currentYear} · Highfields Defense</span>
         </div>
 
         {/* Right: Sound toggle and iconic FM 2010 "CONTINUE >>" Button */}
@@ -91,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
 
-          {/* Iconic FM 2010 Continue / Matchday Action Button */}
+          {/* Action Button */}
           <button
             onClick={onStartClash}
             disabled={!canClash}
@@ -101,29 +117,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : 'bg-[#1b2633] text-slate-500 border border-[#293849] cursor-not-allowed'
             }`}
           >
-            <span>{canClash ? 'Continue >>' : 'Match Concluded'}</span>
+            <span>{canClash ? 'Street Clash >>' : 'Standby'}</span>
           </button>
         </div>
       </div>
 
-      {/* FM 2010 Navigation Tab Strip */}
+      {/* Highfields Navigation Tab Strip */}
       <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-6 bg-gradient-to-b from-[#141e2b] to-[#0c131c] border-b border-[#233549]">
         <nav className="flex items-center gap-0.5 overflow-x-auto text-xs font-semibold">
           {[
-            { id: 'office', label: 'Overview' },
-            { id: 'squad', label: 'The Lads' },
-            { id: 'tactics', label: 'Tactics' },
-            { id: 'away_days', label: 'Away Travel' },
-            { id: 'city', label: 'The City' },
-            { id: 'pub_hq', label: 'The Stronghold' },
-            { id: 'league', label: 'Casuals League' }
+            { id: 'diplomacy_map', label: '🗺️ Highfields Map' },
+            { id: 'diplomacy_desk', label: '🤝 Diplomacy Desk' },
+            { id: 'timeline', label: '📜 1980–2010 Chronicle' },
+            { id: 'street_clashes', label: '💥 Street Clashes' },
+            { id: 'squad', label: '👥 The Crew' },
+            { id: 'tactics', label: '🎯 Tactics Board' },
+            { id: 'counter_culture', label: '🎪 Culture Hub' }
           ].map(tab => {
-            const isActive = activeTab === tab.id;
+            const isActive = activeTab === tab.id || (activeTab === 'office' && tab.id === 'diplomacy_map');
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as ActiveTab)}
-                className={`px-3.5 py-2.5 transition-all whitespace-nowrap border-b-2 text-xs ${
+                className={`px-3.5 py-2.5 transition-all whitespace-nowrap border-b-2 text-xs cursor-pointer ${
                   isActive
                     ? 'bg-gradient-to-b from-[#25394f] to-[#172535] text-white border-amber-400 font-bold shadow-inner'
                     : 'text-[#8fa6be] hover:text-white hover:bg-[#182535] border-transparent'
